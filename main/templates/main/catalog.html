@@ -1,0 +1,62 @@
+{% extends 'main/base.html' %}
+{% block title %}Каталог — Meeple{% endblock %}
+{% block content %}
+<div class="wrap">
+    <div class="breadcrumb"><a href="{% url 'main:home' %}">Главная</a> / Каталог</div>
+    <h1 class="page-title">Каталог настольных игр</h1>
+
+    <div class="catalog-layout">
+        <aside class="filters card">
+            <h2 class="card-title">Фильтры</h2>
+            <form method="get" action="{% url 'main:catalog' %}" class="filter-form">
+                <label class="field-label" for="category">Категория</label>
+                <select class="field" id="category" name="category">
+                    <option value="">Все категории</option>
+                    {% for category in categories %}
+                        <option value="{{ category.slug }}" {% if category.slug == selected_category %}selected{% endif %}>{{ category.name }}</option>
+                    {% endfor %}
+                </select>
+                <label class="field-label" for="max-price">Цена до, ₽</label>
+                <input class="field" id="max-price" type="number" name="max_price" min="0" value="{{ request.GET.max_price }}">
+                <label class="checkbox-label"><input type="checkbox" name="in_stock" value="1" {% if request.GET.in_stock %}checked{% endif %}> Только в наличии</label>
+                <button class="btn" type="submit">Применить</button>
+                <a class="text-link" href="{% url 'main:catalog' %}">Сбросить фильтры</a>
+            </form>
+        </aside>
+
+        <section class="catalog-results" aria-label="Результаты поиска">
+            <form method="get" action="{% url 'main:catalog' %}" class="catalog-search">
+                <input class="field" data-live-search name="q" value="{{ query }}" placeholder="Поиск по названию игры" aria-label="Поиск по названию">
+                <select class="field" name="sort" aria-label="Сортировка">
+                    <option value="name">По названию</option>
+                    <option value="price">Сначала дешевле</option>
+                    <option value="-price">Сначала дороже</option>
+                    <option value="-rating">По рейтингу</option>
+                </select>
+                <button class="btn btn-secondary" type="submit">Найти</button>
+            </form>
+
+            <div class="product-grid product-grid-compact">
+                {% for product in page_obj %}
+                    <article class="product-card card">
+                        <strong class="product-name">{{ product.name }}</strong>
+                        <div class="meta">{{ product.category }} · {{ product.min_age }}+ · ★ {{ product.rating|default:'—' }}</div>
+                        <div class="price">{{ product.price }} ₽</div>
+                        <div class="stock">{% if product.stock.quantity %}В наличии · {{ product.stock.quantity }} шт.{% else %}Нет в наличии{% endif %}</div>
+                    </article>
+                {% empty %}
+                    <p class="empty-state">Ничего не найдено. Измените условия поиска.</p>
+                {% endfor %}
+            </div>
+
+            {% if page_obj.has_other_pages %}
+                <nav class="pagination" aria-label="Страницы каталога">
+                    {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}&q={{ query|urlencode }}">← Назад</a>{% endif %}
+                    <span>Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
+                    {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}&q={{ query|urlencode }}">Далее →</a>{% endif %}
+                </nav>
+            {% endif %}
+        </section>
+    </div>
+</div>
+{% endblock %}

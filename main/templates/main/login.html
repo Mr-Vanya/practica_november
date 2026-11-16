@@ -1,0 +1,18 @@
+{% extends 'main/base.html' %}
+{% block title %}Вход — Meeple{% endblock %}
+{% block content %}
+<div class="wrap auth-page">
+    <section class="auth-card card">
+        <h1 class="page-title">Войти</h1>
+        <form method="post" class="stacked-form">
+            {% csrf_token %}
+            <label class="field-label" for="username">Имя пользователя</label>
+            <input class="field" id="username" name="username" autocomplete="username" required>
+            <label class="field-label" for="password">Пароль</label>
+            <input class="field" id="password" type="password" name="password" autocomplete="current-password" required>
+            <button class="btn" type="submit">Войти</button>
+        </form>
+        {% if submitted %}<p class="form-note" role="status">Данные приняты. Вход пока не выполняется.</p>{% endif %}
+    </section>
+</div>
+{% endblock %}

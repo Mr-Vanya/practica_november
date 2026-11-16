@@ -1,0 +1,47 @@
+{% load static %}
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Meeple — настольные игры{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'main/css/site.css' %}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <header class="site-header">
+        <div class="header-inner">
+            <a class="brand" href="{% url 'main:home' %}"><b>●</b> meeple</a>
+            <nav class="site-nav" aria-label="Основная навигация">
+                <a href="{% url 'main:catalog' %}">Каталог</a>
+                <a href="{% url 'main:help' %}">Как выбрать</a>
+            </nav>
+            <div class="header-actions">
+                <a class="btn btn-secondary" href="{% url 'main:login' %}">Войти</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="site-main">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+        <div class="footer-inner">
+            <a class="brand" href="{% url 'main:home' %}"><b>●</b> meeple</a>
+            <span>Учебный интернет-магазин настольных игр</span>
+            <a href="{% url 'main:help' %}">Как выбрать</a>
+        </div>
+    </footer>
+
+    <nav class="mobile-nav" aria-label="Мобильная навигация">
+        <a href="{% url 'main:home' %}"><span>⌂</span>Главная</a>
+        <a href="{% url 'main:catalog' %}"><span>⌕</span>Каталог</a>
+        <a href="{% url 'main:help' %}"><span>?</span>Как выбрать</a>
+        <a href="{% url 'main:login' %}"><span>◷</span>Войти</a>
+    </nav>
+
+    <script src="{% static 'main/js/site.js' %}?v=20261116"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

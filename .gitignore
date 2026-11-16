@@ -1,0 +1,7 @@
+
+.paused_features/
+venv/
+main/__pycache__/
+db.sqlite3
+pr/__pycache__/
+products/

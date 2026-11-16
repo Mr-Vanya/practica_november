@@ -1,0 +1,38 @@
+{% extends 'main/base.html' %}
+{% block title %}Meeple — настольные игры{% endblock %}
+{% block content %}
+<div class="wrap page-home">
+    <section class="hero">
+        <div class="hero-copy">
+            <div class="eyebrow">ИГРЫ ДЛЯ ВАШЕГО ВЕЧЕРА</div>
+            <h1>Вечер, который запомнится</h1>
+            <p>Подберём настольную игру по возрасту, числу игроков и настроению компании.</p>
+            <a class="btn" href="{% url 'main:catalog' %}">Подобрать игру</a>
+        </div>
+        <div class="hero-art" aria-hidden="true">
+            <div class="box-art"><strong>FOREST<br>KEEPERS</strong><small>выбор команды</small></div>
+        </div>
+    </section>
+
+    <section class="section-block">
+        <div class="section-heading">
+            <h2>Популярное сейчас</h2>
+            <a href="{% url 'main:catalog' %}">Весь каталог →</a>
+        </div>
+        <div class="product-grid">
+            {% for product in products %}
+                <article class="product-card card">
+                    <strong class="product-name">{{ product.name }}</strong>
+                    <div class="meta">{{ product.category }} · {{ product.min_age }}+</div>
+                    <div class="price">{{ product.price }} ₽</div>
+                    <div class="stock">
+                        {% if product.stock.quantity %}В наличии · {{ product.stock.quantity }} шт.{% else %}Нет в наличии{% endif %}
+                    </div>
+                </article>
+            {% empty %}
+                <p class="empty-state">Каталог скоро появится.</p>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+{% endblock %}

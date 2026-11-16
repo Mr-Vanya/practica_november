@@ -1,0 +1,15 @@
+{% extends 'main/base.html' %}
+{% block title %}Помощь и правила — Meeple{% endblock %}
+{% block content %}
+<div class="wrap">
+    <h1 class="page-title">Помощь и правила</h1>
+    <section class="hero help-hero">
+        <div><h2>Подберём игру под вашу компанию</h2><p>Смотрите возраст, число игроков и длительность партии в карточке товара.</p><a class="btn" href="{% url 'main:catalog' %}">Открыть каталог</a></div>
+    </section>
+    {% for q, a in faq %}
+        <section class="faq-item card"><h2>{{ q }}</h2><p>{{ a }}</p></section>
+    {% empty %}
+        <section class="faq-item card"><h2>Как проверить наличие?</h2><p>Остаток указан в карточке товара и проверяется повторно при оформлении.</p></section>
+    {% endfor %}
+</div>
+{% endblock %}
