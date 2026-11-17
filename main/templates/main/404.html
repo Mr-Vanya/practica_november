@@ -1,0 +1,17 @@
+{% extends "main/base.html" %}
+{% load static %}
+{% block title %}404 — страница не найдена{% endblock  %}
+{% block extra_css %}{% static 'main/css/404.css' %}?v=20261117{% endblock %}
+{% block content %}
+<div class = 'teto'>
+    <main class="error-card">
+        <a class="brand" href="/" aria-label="Meeple — на главную">
+            <span class="brand-mark">●</span> meeple
+        </a>
+        <p class="error-code" aria-label="Ошибка 404">404</p>
+        <h1>Такой страницы нет</h1>
+        <p>Возможно, ссылка устарела или адрес был введён с ошибкой. Вернитесь на главную и попробуйте найти нужную страницу там.</p>
+        <a class="home-link" href="/">На главную</a>
+    </main>
+</div>
+{% endblock  %}

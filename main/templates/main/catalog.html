@@ -39,7 +39,7 @@
             <div class="product-grid product-grid-compact">
                 {% for product in page_obj %}
                     <article class="product-card card">
-                        <strong class="product-name">{{ product.name }}</strong>
+                        <a class="product-name" href="{% url 'main:product_detail' product.pk %}">{{ product.name }}</a>
                         <div class="meta">{{ product.category }} · {{ product.min_age }}+ · ★ {{ product.rating|default:'—' }}</div>
                         <div class="price">{{ product.price }} ₽</div>
                         <div class="stock">{% if product.stock.quantity %}В наличии · {{ product.stock.quantity }} шт.{% else %}Нет в наличии{% endif %}</div>

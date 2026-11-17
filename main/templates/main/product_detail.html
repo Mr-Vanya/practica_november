@@ -1,0 +1,38 @@
+{% extends 'main/base.html' %}
+{% block title %}{{ product.name }} — Meeple{% endblock %}
+{% block content %}
+<div class="wrap">
+    <div class="breadcrumb"><a href="{% url 'main:catalog' %}">Каталог</a> / {{ product.name }}</div>
+    <div class="product-layout">
+        <div class="product-cover">
+            {% if product.image %}
+                <img src="{{ product.image.url }}" alt="{{ product.name }}">
+            {% else %}
+                <div class="box-art"><strong>{{ product.name }}</strong></div>
+            {% endif %}
+        </div>
+        <section class="product-details card">
+            <span class="badge">{{ product.category }}</span>
+            <h1>{{ product.name }}</h1>
+            <div class="rating">★ {{ product.rating|default:'—' }} · {{ reviews.count }} отзывов</div>
+            <div class="product-price">{{ product.price }} ₽</div>
+            <p class="stock">В наличии: {{ product.stock.quantity|default:0 }}</p>
+            <p>{{ product.description }}</p>
+            <div class="product-specs">
+                <span>{{ product.min_players }}–{{ product.max_players }} игроков</span>
+                <span>{{ product.duration_min|default:'—' }} мин</span>
+                <span>{{ product.min_age }}+</span>
+            </div>
+        </section>
+    </div>
+
+    <section class="product-reviews card">
+        <h2 class="card-title">Отзывы покупателей</h2>
+        {% for review in reviews %}
+            <article class="review-item"><strong>★ {{ review.rating }} · {{ review.user.username }}</strong><p>{{ review.body }}</p></article>
+        {% empty %}
+            <p class="muted">Отзывов пока нет.</p>
+        {% endfor %}
+    </section>
+</div>
+{% endblock %}

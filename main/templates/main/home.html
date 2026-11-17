@@ -22,7 +22,7 @@
         <div class="product-grid">
             {% for product in products %}
                 <article class="product-card card">
-                    <strong class="product-name">{{ product.name }}</strong>
+                    <a class="product-name" href="{% url 'main:product_detail' product.pk %}">{{ product.name }}</a>
                     <div class="meta">{{ product.category }} · {{ product.min_age }}+</div>
                     <div class="price">{{ product.price }} ₽</div>
                     <div class="stock">

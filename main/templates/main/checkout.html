@@ -1,0 +1,26 @@
+{% extends 'main/base.html' %}
+{% block title %}Оформление заказа — Meeple{% endblock %}
+{% block content %}
+<div class="wrap">
+    <h1 class="page-title">Оформление заказа</h1>
+    <div class="checkout-layout">
+        <form method="post" class="checkout-form card">
+            {% csrf_token %}
+            <h2 class="card-title">Данные получателя</h2>
+            <div class="form-grid">
+                <div><label class="field-label" for="contact-name">Имя и фамилия</label><input class="field" id="contact-name" name="contact_name" required></div>
+                <div><label class="field-label" for="phone">Телефон</label><input class="field" id="phone" name="phone" type="tel" required></div>
+                <div><label class="field-label" for="email">Электронная почта</label><input class="field" id="email" name="email" type="email" required></div>
+                <div><label class="field-label" for="pickup-point">Пункт выдачи</label><input class="field" id="pickup-point" name="pickup_point" required></div>
+            </div>
+            <button class="btn" type="submit">Подтвердить учебный заказ</button>
+        </form>
+        <aside class="order-summary card">
+            <h2 class="card-title">Состав заказа</h2>
+            {% for item in items %}<div class="summary-row"><span>{{ item.product.name }} × {{ item.quantity }}</span><strong>{{ item.product.price }} ₽</strong></div>{% endfor %}
+            <div class="summary-row summary-total"><span>Итого</span><strong>{{ total }} ₽</strong></div>
+            <p class="meta">Учебный проект: реальные платежи и доставка не подключены.</p>
+        </aside>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends 'main/base.html' %}
+{% block title %}Заказ {{ order.number }} — Meeple{% endblock %}
+{% block content %}
+<div class="wrap">
+    <div class="breadcrumb"><a href="{% url 'main:orders' %}">Мои заказы</a> / {{ order.number }}</div>
+    <h1 class="page-title">Заказ {{ order.number }}</h1>
+    <span class="badge badge-success">{{ order.status }}</span>
+    <section class="order-detail-card card">
+        {% for item in order.items.all %}
+            <div class="summary-row"><span>{{ item.product.name }} × {{ item.quantity }}</span><strong>{{ item.unit_price }} ₽</strong></div>
+        {% endfor %}
+        <div class="summary-row summary-total"><span>Итого</span><strong>{{ order.total }} ₽</strong></div>
+    </section>
+</div>
+{% endblock %}

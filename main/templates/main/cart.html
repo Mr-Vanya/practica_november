@@ -1,0 +1,44 @@
+{% extends 'main/base.html' %}
+{% block title %}Корзина — Meeple{% endblock %}
+{% block content %}
+<div class="wrap">
+    <h1 class="page-title">Корзина</h1>
+    {% if items %}
+        <div class="checkout-layout">
+            <section class="cart-items card" aria-label="Товары в корзине">
+                {% for item in items %}
+                    <article class="cart-item" data-cart-row>
+                        <div class="product-thumb">{{ item.product.name|truncatechars:18 }}</div>
+                        <div class="cart-item-info">
+                            <strong>{{ item.product.name }}</strong>
+                            <span class="meta">В наличии: {{ item.product.stock.quantity|default:0 }}</span>
+                        </div>
+                        <form method="post" action="{% url 'main:cart_update' item.pk %}" class="quantity-form" data-cart-quantity-form>
+                            {% csrf_token %}
+                            <label class="visually-hidden" for="quantity-{{ item.pk }}">Количество</label>
+                            <input class="field quantity-input" id="quantity-{{ item.pk }}" type="number" min="1" max="99" name="quantity" value="{{ item.quantity }}" data-cart-quantity data-unit-price="{{ item.product.price }}">
+                            <strong class="cart-line-total" data-cart-line-total>{{ item.line_total|floatformat:2 }} ₽</strong>
+                        </form>
+                        <form method="post" action="{% url 'main:cart_update' item.pk %}">
+                            {% csrf_token %}<input type="hidden" name="action" value="remove">
+                            <button class="btn btn-danger" type="submit">Удалить</button>
+                        </form>
+                    </article>
+                {% endfor %}
+            </section>
+            <aside class="order-summary card">
+                <h2 class="card-title">Ваш заказ</h2>
+                <div class="summary-row summary-total"><span>Итого</span><strong id="cart-grand-total">{{ total|floatformat:2 }} ₽</strong></div>
+                <p class="cart-save-status" id="cart-save-status" aria-live="polite"></p>
+                <a class="btn btn-full" href="{% url 'main:checkout' %}">Перейти к оформлению</a>
+            </aside>
+        </div>
+    {% else %}
+        <section class="empty-panel card">
+            <h2>Корзина пуста</h2>
+            <p class="muted">Добавьте игру из каталога, и она появится здесь.</p>
+            <a class="btn" href="{% url 'main:catalog' %}">Перейти в каталог</a>
+        </section>
+    {% endif %}
+</div>
+{% endblock %}

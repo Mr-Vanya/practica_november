@@ -1,0 +1,19 @@
+{% extends 'main/base.html' %}
+{% block title %}Мои заказы — Meeple{% endblock %}
+{% block content %}
+<div class="wrap">
+    <h1 class="page-title">Мои заказы</h1>
+    <div class="table-scroll card">
+        <table class="data-table">
+            <thead><tr><th>Номер</th><th>Дата</th><th>Статус</th><th>Сумма</th><th></th></tr></thead>
+            <tbody>
+                {% for order in orders %}
+                    <tr><td>{{ order.number }}</td><td>{{ order.created_at|date:'d.m.Y' }}</td><td>{{ order.status }}</td><td>{{ order.total }} ₽</td><td><a href="{% url 'main:order_detail' order.pk %}">Открыть</a></td></tr>
+                {% empty %}
+                    <tr><td colspan="5">Заказов пока нет.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
