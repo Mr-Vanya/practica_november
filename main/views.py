@@ -328,6 +328,18 @@ def manager_product_create(request):
 
 
 @user_passes_test(manager_required)
+def manager_product_edit(request, product_id):
+    from .forms import ProductForm
+    product = get_object_or_404(Product, pk=product_id)
+    form = ProductForm(request.POST or None, request.FILES or None, instance=product)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, f"Изменения товара «{product.name}» сохранены.")
+        return redirect("main:manager_products")
+    return render(request, "main/manager_product_form.html", {"form": form, "product": product, "is_edit": True})
+
+
+@user_passes_test(manager_required)
 def manager_orders(request):
     if request.method == "POST":
         with transaction.atomic():

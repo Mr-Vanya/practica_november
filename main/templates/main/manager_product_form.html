@@ -1,9 +1,12 @@
 {% extends 'main/base.html' %}
-{% block title %}Новый товар — Meeple{% endblock %}
+{% block title %}{% if is_edit %}Редактирование товара{% else %}Новый товар{% endif %} — Meeple{% endblock %}
 {% block content %}
 <div class="wrap">
-    <div class="breadcrumb"><a href="{% url 'main:manager_products' %}">Товары</a> / Новый товар</div>
-    <h1 class="page-title">Новый товар</h1>
+    <div class="breadcrumb"><a href="{% url 'main:manager_products' %}">Товары</a> / {% if is_edit %}Редактирование{% else %}Новый товар{% endif %}</div>
+    <div class="manager-form-heading">
+        <div><p class="eyebrow">УПРАВЛЕНИЕ КАТАЛОГОМ</p><h1 class="page-title">{% if is_edit %}Редактировать товар{% else %}Новый товар{% endif %}</h1><p class="manager-form-intro">Заполните характеристики и проверьте данные перед сохранением.</p></div>
+        <a class="btn btn-secondary" href="{% url 'main:manager_products' %}">Назад к товарам</a>
+    </div>
     <form method="post" enctype="multipart/form-data" class="manager-form card" autocomplete="off" data-form-type="other" data-lpignore="true" data-1p-ignore="true" data-bwignore="true">
         {% csrf_token %}
         {{ form.non_field_errors }}
@@ -63,7 +66,7 @@
                 </tr>
             </tbody>
         </table>
-        <button class="btn" type="submit">Сохранить товар</button>
+        <div class="manager-form-actions"><a class="btn btn-secondary" href="{% url 'main:manager_products' %}">Отмена</a><button class="btn" type="submit">{% if is_edit %}Сохранить изменения{% else %}Добавить товар{% endif %}</button></div>
     </form>
 </div>
 {% endblock %}

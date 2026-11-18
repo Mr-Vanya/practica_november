@@ -19,6 +19,7 @@ urlpatterns = [
     path("help/", views.help_page, name="help"),
     path("manager/products/", views.manager_products, name="manager_products"),
     path("manager/products/new/", views.manager_product_create, name="manager_product_create"),
+    path("manager/products/<int:product_id>/edit/", views.manager_product_edit, name="manager_product_edit"),
     path("manager/orders/", views.manager_orders, name="manager_orders"),
     path("manager/statistics/", views.manager_statistics, name="manager_statistics"),
     path("api/catalog/", views.catalog_json, name="catalog_json"),

@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}Meeple — настольные игры{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'main/css/site.css' %}?v=20261118-price-inputs">
+    <link rel="stylesheet" href="{% static 'main/css/site.css' %}?v=20261118-mobile-manager">
     <link rel="stylesheet" href="{% block extra_css %}{% endblock %}">
     {% block extra_head %}{% endblock %}
 </head>
@@ -63,8 +63,22 @@
         <a href="{% url 'main:catalog' %}"><span>⌕</span>Каталог</a>
         {% if user.is_authenticated %}
             <a href="{% url 'main:cart' %}"><span>▢</span>Корзина</a>
-            <a href="{% url 'main:orders' %}"><span>◷</span>Заказы</a>
+            <details class="mobile-profile">
+                <summary><span>♙</span>Профиль</summary>
+                <div class="mobile-profile-menu">
+                    <a href="{% url 'main:orders' %}">Мои заказы</a>
+                    {% if user.is_staff %}
+                        <a href="{% url 'main:manager_products' %}">Управление товарами</a>
+                        <a href="{% url 'main:manager_statistics' %}">Статистика</a>
+                    {% endif %}
+                    <form method="post" action="{% url 'main:logout' %}">
+                        {% csrf_token %}
+                        <button type="submit">Выйти</button>
+                    </form>
+                </div>
+            </details>
         {% else %}
+            <a href="{% url 'main:help' %}"><span>?</span>Помощь</a>
             <a href="{% url 'main:login' %}"><span>◷</span>Войти</a>
         {% endif %}
     </nav>
