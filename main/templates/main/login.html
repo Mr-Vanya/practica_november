@@ -12,7 +12,7 @@
             <input class="field" id="password" type="password" name="password" autocomplete="current-password" required>
             <button class="btn" type="submit">Войти</button>
         </form>
-        {% if submitted %}<p class="form-note" role="status">Данные приняты. Вход пока не выполняется.</p>{% endif %}
+        <p>Нет аккаунта? <a href="{% url 'main:register' %}">Зарегистрироваться</a></p>
     </section>
 </div>
 {% endblock %}

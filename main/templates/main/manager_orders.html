@@ -1,0 +1,17 @@
+{% extends 'main/base.html' %}
+{% block title %}Заказы покупателей — Meeple{% endblock %}
+{% block content %}
+<div class="wrap">
+    <h1 class="page-title">Заказы покупателей</h1>
+    <div class="table-scroll card">
+        <table class="data-table">
+            <thead><tr><th>Номер</th><th>Покупатель</th><th>Сумма</th><th>Статус</th><th>Изменить статус</th></tr></thead>
+            <tbody>
+                {% for order in orders %}
+                    <tr><td>{{ order.number }}</td><td>{{ order.user }}</td><td>{{ order.total }} ₽</td><td>{{ order.status }}</td><td><form method="post" class="inline-form">{% csrf_token %}<input type="hidden" name="order_id" value="{{ order.pk }}"><select name="status" aria-label="Статус заказа"><option>Новый</option><option>Подтверждён</option><option>Собран</option><option>Подготовлен к выдаче</option><option>Завершён</option><option>Отменён</option></select><button class="btn btn-secondary" type="submit">Сохранить</button></form></td></tr>
+                {% empty %}<tr><td colspan="5">Заказов пока нет.</td></tr>{% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

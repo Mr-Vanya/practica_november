@@ -1,15 +1,47 @@
 {% extends 'main/base.html' %}
-{% block title %}Помощь и правила — Meeple{% endblock %}
+{% block title %}Подобрать игру — Meeple{% endblock %}
 {% block content %}
-<div class="wrap">
-    <h1 class="page-title">Помощь и правила</h1>
-    <section class="hero help-hero">
-        <div><h2>Подберём игру под вашу компанию</h2><p>Смотрите возраст, число игроков и длительность партии в карточке товара.</p><a class="btn" href="{% url 'main:catalog' %}">Открыть каталог</a></div>
-    </section>
-    {% for q, a in faq %}
-        <section class="faq-item card"><h2>{{ q }}</h2><p>{{ a }}</p></section>
-    {% empty %}
-        <section class="faq-item card"><h2>Как проверить наличие?</h2><p>Остаток указан в карточке товара и проверяется повторно при оформлении.</p></section>
-    {% endfor %}
+<div class="game-finder">
+    <div class="game-finder-heading">
+        <div class="wrap">
+            <p class="eyebrow">НЕ ЗНАЕТЕ, С ЧЕГО НАЧАТЬ?</p>
+            <h1>Найдите свою игру</h1>
+            <p>Выберите параметры — и мы покажем подходящие настольные игры из каталога.</p>
+        </div>
+    </div>
+    <div class="wrap game-finder-wrap">
+        <form class="game-finder-card" method="get" action="{% url 'main:catalog' %}">
+            <div class="finder-sentence">
+                <label>Игра для
+                    <select name="players" aria-label="Количество игроков">
+                        <option value="">любого числа игроков</option>
+                        {% for count in player_options %}<option value="{{ count }}">{{ count }} {% if count == 1 %}игрока{% elif count < 5 %}игроков{% else %}игроков{% endif %}</option>{% endfor %}
+                    </select>
+                </label>
+                <label>от
+                    <select name="age" aria-label="Возраст">
+                        <option value="">любого возраста</option>
+                        {% for age in age_options %}<option value="{{ age }}">{{ age }} лет</option>{% endfor %}
+                    </select>
+                </label>
+                <label>и длительностью
+                    <select name="duration" aria-label="Длительность игры">
+                        <option value="">любой длительности</option>
+                        {% for duration in duration_options %}<option value="{{ duration }}">{{ duration }} минут</option>{% endfor %}
+                    </select>
+                </label>
+                <label>в категории
+                    <select name="category" aria-label="Категория">
+                        <option value="">любой категории</option>
+                        {% for category in categories %}<option value="{{ category.slug }}">{{ category.name }}</option>{% endfor %}
+                    </select>
+                </label>
+            </div>
+            <div class="finder-footer">
+                <span>Параметры можно будет изменить в каталоге.</span>
+                <button class="btn" type="submit">Показать подходящие игры →</button>
+            </div>
+        </form>
+    </div>
 </div>
 {% endblock %}

@@ -1,0 +1,13 @@
+{% extends 'main/base.html' %}
+{% block title %}Статистика — Meeple{% endblock %}
+{% block content %}
+<div class="wrap">
+    <h1 class="page-title">Статистика магазина</h1>
+    <div class="stats-grid">
+        <section class="stat-card card"><small>Заказы</small><strong>{{ order_count }}</strong></section>
+        <section class="stat-card card"><small>Выручка</small><strong>{{ revenue }} ₽</strong></section>
+        <section class="stat-card card"><small>Товары</small><strong>{{ product_count }}</strong></section>
+        <section class="stat-card card"><small>Остаток ≤ 3 шт.</small><strong>{{ low_stock }}</strong></section>
+    </div>
+</div>
+{% endblock %}

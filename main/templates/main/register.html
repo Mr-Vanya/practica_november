@@ -6,7 +6,17 @@
         <h1 class="page-title">Регистрация</h1>
         <form method="post" class="stacked-form">
             {% csrf_token %}
-            {{ form.as_p }}
+            <label for="{{ form.username.id_for_label }}">Имя пользователя</label>
+            {{ form.username }}
+            {{ form.username.errors }}
+                    
+            <label for="{{ form.password1.id_for_label }}">Пароль</label>
+            {{ form.password1 }}
+            {{ form.password1.errors }}
+                    
+            <label for="{{ form.password2.id_for_label }}">Подтверждение пароля</label>
+            {{ form.password2 }}
+            {{ form.password2.errors }}
             <button class="btn" type="submit">Создать аккаунт</button>
         </form>
         <p>Уже зарегистрированы? <a href="{% url 'main:login' %}">Войти</a></p>

@@ -1,0 +1,69 @@
+{% extends 'main/base.html' %}
+{% block title %}Новый товар — Meeple{% endblock %}
+{% block content %}
+<div class="wrap">
+    <div class="breadcrumb"><a href="{% url 'main:manager_products' %}">Товары</a> / Новый товар</div>
+    <h1 class="page-title">Новый товар</h1>
+    <form method="post" enctype="multipart/form-data" class="manager-form card" autocomplete="off" data-form-type="other" data-lpignore="true" data-1p-ignore="true" data-bwignore="true">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        <table class="product-form-table">
+            <tbody>
+                <tr>
+                    <th scope="row"><label for="{{ form.category.id_for_label }}">Категория</label></th>
+                    <td>{{ form.category }}{{ form.category.errors }}</td>
+                </tr>
+                <tr>
+                    <th scope="row"><label for="{{ form.manufacturer.id_for_label }}">Производитель</label></th>
+                    <td>{{ form.manufacturer }}{{ form.manufacturer.errors }}</td>
+                </tr>
+                <tr>
+                    <th scope="row"><label for="{{ form.name.id_for_label }}">Название</label></th>
+                    <td>{{ form.name }}{{ form.name.errors }}</td>
+                </tr>
+                <tr>
+                    <th scope="row"><label for="{{ form.sku.id_for_label }}">Артикул</label></th>
+                    <td>{{ form.sku }}{{ form.sku.errors }}</td>
+                </tr>
+                <tr>
+                    <th scope="row"><label for="{{ form.description.id_for_label }}">Описание</label></th>
+                    <td>{{ form.description }}{{ form.description.errors }}</td>
+                </tr>
+                <tr>
+                    <th scope="row"><label for="{{ form.price.id_for_label }}">Цена</label></th>
+                    <td>{{ form.price }} ₽{{ form.price.errors }}</td>
+                </tr>
+                <tr>
+                    <th scope="row"><label for="{{ form.min_age.id_for_label }}">Возраст от</label></th>
+                    <td>{{ form.min_age }} лет{{ form.min_age.errors }}</td>
+                </tr>
+                <tr>
+                    <th scope="row"><label for="{{ form.min_players.id_for_label }}">Игроков от</label></th>
+                    <td>{{ form.min_players }}{{ form.min_players.errors }}</td>
+                </tr>
+                <tr>
+                    <th scope="row"><label for="{{ form.max_players.id_for_label }}">Игроков до</label></th>
+                    <td>{{ form.max_players }}{{ form.max_players.errors }}</td>
+                </tr>
+                <tr>
+                    <th scope="row"><label for="{{ form.duration_min.id_for_label }}">Длительность, минут</label></th>
+                    <td>{{ form.duration_min }}{{ form.duration_min.errors }}</td>
+                </tr>
+                <tr>
+                    <th scope="row"><label for="{{ form.language.id_for_label }}">Язык</label></th>
+                    <td>{{ form.language }}{{ form.language.errors }}</td>
+                </tr>
+                <tr>
+                    <th scope="row"><label for="{{ form.image.id_for_label }}">Изображение</label></th>
+                    <td>{{ form.image }}{{ form.image.errors }}</td>
+                </tr>
+                <tr>
+                    <th scope="row"><label for="{{ form.is_active.id_for_label }}">Показывать в каталоге</label></th>
+                    <td>{{ form.is_active }}{{ form.is_active.errors }}</td>
+                </tr>
+            </tbody>
+        </table>
+        <button class="btn" type="submit">Сохранить товар</button>
+    </form>
+</div>
+{% endblock %}

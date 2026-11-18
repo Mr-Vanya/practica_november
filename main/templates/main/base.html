@@ -5,8 +5,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}Meeple — настольные игры{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'main/css/site.css' %}?v=20261117">
-    <link rel="stylesheet" href="{% block extra_css %}{% endblock  %}">    
+    <link rel="stylesheet" href="{% static 'main/css/site.css' %}?v=20261118-price-inputs">
+    <link rel="stylesheet" href="{% block extra_css %}{% endblock %}">
     {% block extra_head %}{% endblock %}
 </head>
 <body>
@@ -16,18 +16,35 @@
             <nav class="site-nav" aria-label="Основная навигация">
                 <a href="{% url 'main:catalog' %}">Каталог</a>
                 <a href="{% url 'main:help' %}">Как выбрать</a>
-                {% if user.is_authenticated %}<a href="{% url 'main:orders' %}">Личный кабинет</a>{% endif %}
+                {% if user.is_authenticated %}
+                    <a href="{% url 'main:orders' %}">Мои заказы</a>
+                    {% if user.is_staff %}
+                        <a href="{% url 'main:manager_products' %}">Управление</a>
+                        <a class="btn btn-secondary" href="{% url 'main:manager_statistics' %}">Статистика</a>
+                    {% endif %}
+                {% endif %}
             </nav>
             <div class="header-actions">
                 {% if user.is_authenticated %}
-                    <a class="btn btn-secondary" href="{% url 'main:orders' %}">Личный кабинет</a>
-                    <form method="post" action="{% url 'main:logout' %}">{% csrf_token %}<button class="btn btn-secondary" type="submit">Выйти</button></form>
+                    <a class="btn btn-secondary" href="{% url 'main:cart' %}">Корзина</a>
+                    <form method="post" action="{% url 'main:logout' %}">
+                        {% csrf_token %}
+                        <button class="btn btn-secondary" type="submit">Выйти</button>
+                    </form>
                 {% else %}
                     <a class="btn btn-secondary" href="{% url 'main:login' %}">Войти</a>
                 {% endif %}
             </div>
         </div>
     </header>
+
+    {% if messages %}
+        <div class="message-list wrap" role="status">
+            {% for message in messages %}
+                <div class="notice">{{ message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
 
     <main class="site-main">
         {% block content %}{% endblock %}
@@ -37,18 +54,22 @@
         <div class="footer-inner">
             <a class="brand" href="{% url 'main:home' %}"><b>●</b> meeple</a>
             <span>Учебный интернет-магазин настольных игр</span>
-            <a href="{% url 'main:help' %}">Как выбрать</a>
+            <a href="{% url 'main:help' %}">Помощь</a>
         </div>
     </footer>
 
     <nav class="mobile-nav" aria-label="Мобильная навигация">
         <a href="{% url 'main:home' %}"><span>⌂</span>Главная</a>
         <a href="{% url 'main:catalog' %}"><span>⌕</span>Каталог</a>
-        <a href="{% url 'main:help' %}"><span>?</span>Как выбрать</a>
-        {% if user.is_authenticated %}<a href="{% url 'main:orders' %}"><span>◷</span>Кабинет</a>{% else %}<a href="{% url 'main:login' %}"><span>◷</span>Войти</a>{% endif %}
+        {% if user.is_authenticated %}
+            <a href="{% url 'main:cart' %}"><span>▢</span>Корзина</a>
+            <a href="{% url 'main:orders' %}"><span>◷</span>Заказы</a>
+        {% else %}
+            <a href="{% url 'main:login' %}"><span>◷</span>Войти</a>
+        {% endif %}
     </nav>
 
-    <script src="{% static 'main/js/site.js' %}?v=20261116"></script>
+    <script src="{% static 'main/js/site.js' %}?v=20261118-allfilters"></script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>

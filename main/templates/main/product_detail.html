@@ -23,6 +23,15 @@
                 <span>{{ product.duration_min|default:'—' }} мин</span>
                 <span>{{ product.min_age }}+</span>
             </div>
+            {% if user.is_authenticated %}
+                <form method="post" action="{% url 'main:cart_add' product.pk %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{% url 'main:product_detail' product.pk %}">
+                    <button class="btn" type="submit" {% if not product.stock.quantity %}disabled{% endif %}>Добавить в корзину</button>
+                </form>
+            {% else %}
+                <a class="btn" href="{% url 'main:login' %}">Войдите, чтобы добавить в корзину</a>
+            {% endif %}
         </section>
     </div>
 
@@ -33,6 +42,16 @@
         {% empty %}
             <p class="muted">Отзывов пока нет.</p>
         {% endfor %}
+        {% if user.is_authenticated %}
+            <form method="post" class="review-form">
+                {% csrf_token %}
+                <label class="field-label" for="rating">Оценка</label>
+                <select class="field" id="rating" name="rating"><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></select>
+                <label class="field-label" for="review-body">Ваш отзыв</label>
+                <textarea class="field" id="review-body" name="body" placeholder="Расскажите об игре"></textarea>
+                <button class="btn" type="submit">Отправить отзыв</button>
+            </form>
+        {% endif %}
     </section>
 </div>
 {% endblock %}

@@ -10,6 +10,11 @@
             <div class="summary-row"><span>{{ item.product.name }} × {{ item.quantity }}</span><strong>{{ item.unit_price }} ₽</strong></div>
         {% endfor %}
         <div class="summary-row summary-total"><span>Итого</span><strong>{{ order.total }} ₽</strong></div>
+        {% if order.status.name != 'Отменён' and order.status.name != 'Завершён' %}
+            <form method="post" action="{% url 'main:order_cancel' order.pk %}">
+                {% csrf_token %}<button class="btn btn-danger" type="submit">Отменить заказ</button>
+            </form>
+        {% endif %}
     </section>
 </div>
 {% endblock %}
