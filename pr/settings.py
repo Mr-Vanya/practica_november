@@ -34,7 +34,7 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
 # Application definition
 
-INSTALLED_APPS = [
+INSTALLED_APPS = [ 
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
