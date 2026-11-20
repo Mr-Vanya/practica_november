@@ -8,6 +8,7 @@
     <div class="catalog-layout">
         <aside class="filters card">
             <form id="catalog-filter-form" method="get" action="{% url 'main:catalog' %}" class="filter-form" autocomplete="off" data-form-type="other" data-lpignore="true" data-1p-ignore="true" data-bwignore="true">
+                <input type="hidden" name="q" value="{{ query }}">
                 <div class="filter-options">
                     <details class="filter-dropdown category-dropdown" {% if selected_categories %}open{% endif %}>
                         <summary>Категории</summary>
@@ -108,7 +109,6 @@
 
         <section class="catalog-results" aria-label="Результаты поиска">
             <div class="catalog-search">
-                    <input class="field" form="catalog-filter-form" data-live-search name="q" autocomplete="off" value="{{ query }}" placeholder="Поиск по названию игры" aria-label="Поиск по названию">
                 <select class="field" form="catalog-filter-form" name="sort" aria-label="Сортировка">
                     <option value="name" {% if selected_sort == 'name' %}selected{% endif %}>По названию</option>
                     <option value="price" {% if selected_sort == 'price' %}selected{% endif %}>Сначала дешевле</option>

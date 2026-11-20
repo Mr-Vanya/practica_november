@@ -71,6 +71,49 @@ button {
     gap: 28px;
 }
 
+.header-search {
+    position: relative;
+    display: flex;
+    flex: 0 1 270px;
+    min-width: 180px;
+    height: 42px;
+    margin: 0;
+}
+
+.header-search input {
+    width: 100%;
+    min-width: 0;
+    padding: 9px 42px 9px 13px;
+    border: 1px solid var(--color-line);
+    border-radius: 11px;
+    outline: none;
+    background: #fff;
+    color: var(--color-text);
+}
+
+.header-search input:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgb(101 88 211 / 12%);
+}
+
+.header-search button {
+    position: absolute;
+    top: 0;
+    right: 0;
+    display: grid;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: 0 11px 11px 0;
+    background: transparent;
+    color: var(--color-muted);
+}
+
+.header-search button:hover { color: var(--color-primary); }
+.header-search svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+
 .brand {
     flex: 0 0 auto;
     color: var(--color-text);
@@ -524,15 +567,13 @@ button {
 }
 
 .catalog-search {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 180px auto;
+    display: flex;
+    justify-content: flex-end;
     gap: 10px;
     margin-bottom: 16px;
 }
 
-.catalog-search .field:first-child {
-    min-width: 0;
-}
+.catalog-search select { width: min(220px, 100%); }
 
 .pagination {
     display: flex;
@@ -928,6 +969,9 @@ button {
     .header-inner {
         gap: 18px;
     }
+
+    .header-search { flex-basis: 190px; }
+    .site-nav { gap: 12px; }
 }
 
 @media (max-width: 800px) {
@@ -938,8 +982,12 @@ button {
     .header-inner {
         width: calc(100% - 32px);
         min-height: 62px;
+        flex-wrap: wrap;
         gap: 12px;
+        padding: 9px 0;
     }
+
+    .header-search { order: 3; flex: 1 0 100%; min-width: 0; }
 
     .site-nav {
         display: none;
@@ -984,14 +1032,8 @@ button {
         position: static;
     }
 
-    .catalog-search {
-        grid-template-columns: minmax(0, 1fr) auto;
-    }
-
-    .catalog-search select {
-        grid-column: 1 / -1;
-        grid-row: 2;
-    }
+    .catalog-search { justify-content: stretch; }
+    .catalog-search select { width: 100%; }
 
     .product-layout {
         grid-template-columns: 1fr;
@@ -1079,14 +1121,7 @@ button {
 }
 
 @media (max-width: 480px) {
-    .catalog-search {
-        grid-template-columns: 1fr;
-    }
-
-    .catalog-search select {
-        grid-column: auto;
-        grid-row: auto;
-    }
+    .catalog-search { justify-content: stretch; }
 
     .page-heading {
         align-items: flex-start;

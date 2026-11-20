@@ -50,7 +50,12 @@ def catalog(request):
     player_ranges = Product.objects.filter(is_active=True).values_list("min_players", "max_players")
     player_options = sorted({count for minimum, maximum in player_ranges for count in range(minimum, maximum + 1)})
     selected_players = [int(value) for value in request.GET.getlist("players") if value.isdigit() and int(value) in player_options]
-    if query: qs = qs.filter(Q(name__icontains=query) | Q(description__icontains=query))
+    if query:
+        qs = qs.filter(
+            Q(name__icontains=query)
+            | Q(description__icontains=query)
+            | Q(category__name__icontains=query)
+        )
     if categories_selected: qs = qs.filter(category__slug__in=categories_selected)
     if selected_manufacturers: qs = qs.filter(manufacturer_id__in=selected_manufacturers)
     if selected_languages:

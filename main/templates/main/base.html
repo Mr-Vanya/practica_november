@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}Meeple — настольные игры{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'main/css/site.css' %}?v=20261120-product-card-image">
+    <link rel="stylesheet" href="{% static 'main/css/site.css' %}?v=20261120-header-search">
     <link rel="stylesheet" href="{% block extra_css %}{% endblock %}">
     {% block extra_head %}{% endblock %}
 </head>
@@ -13,6 +13,11 @@
     <header class="site-header">
         <div class="header-inner">
             <a class="brand" href="{% url 'main:home' %}"><b>●</b> meeple</a>
+            <form class="header-search" method="get" action="{% url 'main:catalog' %}" role="search">
+                <label class="visually-hidden" for="site-search">Поиск по товарам и категориям</label>
+                <input id="site-search" type="search" name="q" value="{% if request.resolver_match.url_name == 'catalog' %}{{ request.GET.q }}{% endif %}" placeholder="Найти игру или категорию">
+                <button type="submit" aria-label="Найти"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.5"></circle><path d="m16 16 4.2 4.2"></path></svg></button>
+            </form>
             <nav class="site-nav" aria-label="Основная навигация">
                 <a href="{% url 'main:catalog' %}">Каталог</a>
                 <a href="{% url 'main:help' %}">Как выбрать</a>
@@ -92,7 +97,7 @@
         {% endif %}
     </nav>
 
-    <script src="{% static 'main/js/site.js' %}?v=20261118-allfilters"></script>
+    <script src="{% static 'main/js/site.js' %}?v=20261120-catalog-search"></script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>
