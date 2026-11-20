@@ -5,11 +5,32 @@
     <h1 class="page-title">Заказы покупателей</h1>
     <div class="table-scroll card">
         <table class="data-table">
-            <thead><tr><th>Номер</th><th>Покупатель</th><th>Сумма</th><th>Статус</th><th>Изменить статус</th></tr></thead>
+            <thead><tr><th>Номер</th><th>Покупатель</th><th>Сумма</th><th>Статус заказа</th><th>Возврат</th><th>Изменить статус</th></tr></thead>
             <tbody>
                 {% for order in orders %}
-                    <tr><td>{{ order.number }}</td><td>{{ order.user }}</td><td>{{ order.total }} ₽</td><td>{{ order.status }}</td><td><form method="post" class="inline-form">{% csrf_token %}<input type="hidden" name="order_id" value="{{ order.pk }}"><select name="status" aria-label="Статус заказа">{% for status in statuses %}<option value="{{ status }}"{% if order.status.name == status %} selected{% endif %}>{{ status }}</option>{% endfor %}</select><button class="btn btn-secondary" type="submit">Изменить</button></form></td></tr>
-                {% empty %}<tr><td colspan="5">Заказов пока нет.</td></tr>{% endfor %}
+                    <tr>
+                        <td>{{ order.number }}</td>
+                        <td>{{ order.user }}</td>
+                        <td>{{ order.total }} ₽</td>
+                        <td>{{ order.status }}</td>
+                        <td>
+                            {% if order.return_status == 'pending' %}
+                                <strong>Ожидает решения</strong>
+                                <p>{{ order.return_reason|linebreaksbr }}</p>
+                                <form method="post" action="{% url 'main:manager_return_decision' order.pk %}" class="return-decision-form">
+                                    {% csrf_token %}
+                                    <button class="btn btn-secondary" name="decision" value="approved" type="submit">Разрешить</button>
+                                    <button class="btn btn-danger" name="decision" value="rejected" type="submit">Отклонить</button>
+                                </form>
+                            {% elif order.return_status == 'approved' %}
+                                <strong>Одобрен</strong><p>{{ order.return_reason|linebreaksbr }}</p>
+                            {% elif order.return_status == 'rejected' %}
+                                <strong>Отклонён</strong><p>{{ order.return_reason|linebreaksbr }}</p>
+                            {% else %}—{% endif %}
+                        </td>
+                        <td><form method="post" class="inline-form">{% csrf_token %}<input type="hidden" name="order_id" value="{{ order.pk }}"><select name="status" aria-label="Статус заказа">{% for status in statuses %}<option value="{{ status }}"{% if order.status.name == status %} selected{% endif %}>{{ status }}</option>{% endfor %}</select><button class="btn btn-secondary" type="submit">Изменить</button></form></td>
+                    </tr>
+                {% empty %}<tr><td colspan="6">Заказов пока нет.</td></tr>{% endfor %}
             </tbody>
         </table>
     </div>

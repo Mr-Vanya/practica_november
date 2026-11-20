@@ -1,4 +1,14 @@
 document.addEventListener("DOMContentLoaded", () => {
+  const returnDialog = document.querySelector("[data-return-dialog]");
+  const openReturnDialog = document.querySelector("[data-open-return-dialog]");
+  if (returnDialog && openReturnDialog) {
+    openReturnDialog.addEventListener("click", () => returnDialog.showModal());
+    returnDialog.querySelector("[data-close-return-dialog]")?.addEventListener("click", () => returnDialog.close());
+    returnDialog.addEventListener("click", (event) => {
+      if (event.target === returnDialog) returnDialog.close();
+    });
+  }
+
   document.querySelectorAll("[data-filter-toggle]").forEach((checkbox) => {
     const controls = checkbox.dataset.filterToggle
       .split(",")

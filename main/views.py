@@ -280,6 +280,33 @@ def order_cancel(request, order_id):
     return redirect("main:order_detail", order_id=order_id)
 
 
+@login_required
+@require_POST
+def order_return_request(request, order_id):
+    reason = request.POST.get("reason", "").strip()
+    with transaction.atomic():
+        order = get_object_or_404(
+            CustomerOrder.objects.select_for_update(), pk=order_id, user=request.user
+        )
+        if order.status.name != "Завершён":
+            messages.error(request, "Оформить возврат можно после завершения заказа.")
+        elif order.return_status == "pending":
+            messages.info(request, "Заявка на возврат уже ожидает решения менеджера.")
+        elif order.return_status == "approved":
+            messages.info(request, "Возврат по этому заказу уже одобрен.")
+        elif not reason:
+            messages.error(request, "Укажите причину возврата.")
+        else:
+            order.return_reason = reason[:1000]
+            order.return_status = "pending"
+            order.save(update_fields=["return_reason", "return_status"])
+            messages.success(
+                request,
+                "Заявка на возврат оформлена. Дождитесь решения менеджера.",
+            )
+    return redirect("main:order_detail", order_id=order_id)
+
+
 def help_page(request):
     return render(request, "main/help.html", {
         "categories": Category.objects.all(),
@@ -366,6 +393,28 @@ def manager_orders(request):
         "orders": CustomerOrder.objects.select_related("user", "status"),
         "statuses": statuses,
     })
+
+
+@user_passes_test(manager_required)
+@require_POST
+def manager_return_decision(request, order_id):
+    decision = request.POST.get("decision")
+    if decision not in {"approved", "rejected"}:
+        messages.error(request, "Неизвестное решение по возврату.")
+        return redirect("main:manager_orders")
+
+    with transaction.atomic():
+        order = get_object_or_404(CustomerOrder.objects.select_for_update(), pk=order_id)
+        if order.return_status != "pending":
+            messages.error(request, "По этому заказу нет возврата, ожидающего решения.")
+        else:
+            order.return_status = decision
+            order.save(update_fields=["return_status"])
+            messages.success(
+                request,
+                "Возврат одобрен." if decision == "approved" else "Возврат отклонён.",
+            )
+    return redirect("main:manager_orders")
 
 
 @user_passes_test(manager_required)

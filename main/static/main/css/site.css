@@ -188,6 +188,26 @@ button {
     font-size: 10px;
 }
 
+.return-request-card { margin-top: 16px; padding: 18px; }
+.return-request-card p { margin: 8px 0; }
+.return-dialog {
+    width: min(520px, calc(100% - 28px));
+    max-width: 520px;
+    padding: 0;
+    border: 1px solid var(--color-line);
+    border-radius: 18px;
+    color: var(--color-text);
+    box-shadow: 0 24px 80px rgb(20 24 40 / 28%);
+}
+.return-dialog::backdrop { background: rgb(24 25 38 / 55%); backdrop-filter: blur(3px); }
+.return-dialog-form { display: grid; gap: 12px; padding: 24px; }
+.return-dialog-form h2 { margin: 0; font-size: 21px; }
+.return-dialog-form p { margin: 0; }
+.return-dialog-form textarea { min-height: 120px; resize: vertical; }
+.return-dialog-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
+.return-decision-form { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.return-decision-form .btn { min-height: 36px; padding: 7px 10px; font-size: 12px; }
+
 .site-main {
     flex: 1;
 }
@@ -1000,6 +1020,9 @@ button {
     .header-actions form .btn-secondary:last-child {
         display: none;
     }
+
+    .return-dialog-form { padding: 18px; }
+    .return-dialog-actions > .btn { flex: 1 1 auto; }
 
     .wrap {
         width: calc(100% - 32px);

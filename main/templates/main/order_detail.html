@@ -16,5 +16,37 @@
             </form>
         {% endif %}
     </section>
+
+    {% if order.return_status %}
+        <section class="return-request-card card" aria-live="polite">
+            <h2 class="card-title">Заявка на возврат</h2>
+            <p><strong>Статус:</strong>
+                {% if order.return_status == 'pending' %}Ожидает решения менеджера
+                {% elif order.return_status == 'approved' %}Возврат одобрен
+                {% elif order.return_status == 'rejected' %}Возврат отклонён{% endif %}
+            </p>
+            <p><strong>Причина:</strong> {{ order.return_reason|linebreaksbr }}</p>
+            {% if order.return_status == 'pending' %}<p class="muted">Дождитесь решения менеджера. Статус заявки появится здесь.</p>{% endif %}
+        </section>
+    {% endif %}
+
+    {% if order.status.name == 'Завершён' and order.return_status != 'pending' and order.return_status != 'approved' %}
+        <button class="btn btn-secondary" type="button" data-open-return-dialog>
+            {% if order.return_status == 'rejected' %}Подать заявку повторно{% else %}Оформить возврат{% endif %}
+        </button>
+        <dialog class="return-dialog" data-return-dialog aria-labelledby="return-dialog-title">
+            <form method="post" action="{% url 'main:order_return_request' order.pk %}" class="return-dialog-form">
+                {% csrf_token %}
+                <h2 id="return-dialog-title">Причина возврата</h2>
+                <p class="muted">Опишите, почему хотите вернуть заказ. После отправки дождитесь решения менеджера.</p>
+                <label class="field-label" for="return-reason">Причина</label>
+                <textarea class="field" id="return-reason" name="reason" maxlength="1000" required rows="5" placeholder="Напишите причину возврата"></textarea>
+                <div class="return-dialog-actions">
+                    <button class="btn btn-secondary" type="button" data-close-return-dialog>Отмена</button>
+                    <button class="btn" type="submit">Отправить заявку</button>
+                </div>
+            </form>
+        </dialog>
+    {% endif %}
 </div>
 {% endblock %}

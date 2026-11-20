@@ -165,6 +165,13 @@ class PromoCode(models.Model):
 
 
 class CustomerOrder(models.Model):
+    RETURN_STATUS_CHOICES = [
+        ("", "Возврат не запрошен"),
+        ("pending", "Ожидает решения менеджера"),
+        ("approved", "Возврат одобрен"),
+        ("rejected", "Возврат отклонён"),
+    ]
+
     number = models.CharField("Номер заказа", max_length=30, unique=True)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.PROTECT,
@@ -187,6 +194,10 @@ class CustomerOrder(models.Model):
     phone = models.CharField("Телефон", max_length=20)
     email = models.EmailField("Электронная почта")
     pickup_point = models.CharField("Пункт выдачи", max_length=200)
+    return_status = models.CharField(
+        "Статус возврата", max_length=20, choices=RETURN_STATUS_CHOICES, blank=True
+    )
+    return_reason = models.TextField("Причина возврата", blank=True)
 
     class Meta:
         verbose_name = "заказ"
