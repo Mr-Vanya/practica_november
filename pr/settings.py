@@ -28,7 +28,7 @@ DEBUG = False
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', "192.168.1.152"]
 
 # Keep authenticated sessions for one week, including after closing the browser.
-SESSION_COOKIE_AGE = 60 * 60 * 24 * 7
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 7 
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
 
