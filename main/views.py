@@ -10,9 +10,11 @@ from django.core.paginator import Paginator
 from django.db.models.deletion import ProtectedError
 from django.db import transaction
 from django.db.models import Avg, F, Q, Sum, Count
+from django.db.models.functions import TruncMonth
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from .models import (
@@ -474,11 +476,70 @@ def notification_mark_all_read(request):
 
 @user_passes_test(manager_required)
 def manager_statistics(request):
+    orders = CustomerOrder.objects.exclude(status__name="Отменён")
+    revenue = orders.aggregate(value=Sum("total"))["value"] or Decimal("0.00")
+
+    order_status_rows = list(
+        CustomerOrder.objects.values("status__name")
+        .annotate(value=Count("id"))
+        .order_by("status__name")
+    )
+    category_rows = list(
+        Product.objects.values("category__name")
+        .annotate(value=Count("id"))
+        .order_by("-value", "category__name")
+    )
+    low_stock_products = list(
+        Stock.objects.filter(quantity__lte=3)
+        .values("product__name", "quantity")
+        .order_by("quantity", "product__name")[:10]
+    )
+
+    month_names = ["янв", "фев", "мар", "апр", "май", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"]
+    today = timezone.localdate()
+    month_index = today.year * 12 + today.month - 1
+    month_keys = []
+    for offset in range(5, -1, -1):
+        year, month_zero_based = divmod(month_index - offset, 12)
+        month = month_zero_based + 1
+        month_keys.append((year, month, f"{month_names[month_zero_based]} {year}"))
+
+    revenue_by_month = {
+        (row["month"].year, row["month"].month): row["value"]
+        for row in orders.annotate(month=TruncMonth("created_at"))
+        .values("month")
+        .annotate(value=Sum("total"))
+    }
+    revenue_month_rows = [
+        {"label": label, "value": revenue_by_month.get((year, month), Decimal("0.00"))}
+        for year, month, label in month_keys
+    ]
+
+    def make_bars(rows, label_field, value_field="value"):
+        maximum = max((row[value_field] for row in rows), default=0) or 1
+        return [
+            {
+                "label": row[label_field],
+                "value": row[value_field],
+                "width": max(3, round(float(row[value_field]) / float(maximum) * 100)) if row[value_field] else 0,
+            }
+            for row in rows
+        ]
+
+    status_bars = make_bars(order_status_rows, "status__name")
+    category_bars = make_bars(category_rows, "category__name")
+    revenue_bars = make_bars(revenue_month_rows, "label")
+    stock_bars = make_bars(low_stock_products, "product__name", "quantity")
+
     return render(request, "main/manager_statistics.html", {
         "order_count": CustomerOrder.objects.count(),
-        "revenue": CustomerOrder.objects.exclude(status__name="Отменён").aggregate(value=Sum("total"))["value"] or 0,
+        "revenue": revenue,
         "product_count": Product.objects.count(),
         "low_stock": Stock.objects.filter(quantity__lte=3).count(),
+        "order_status_bars": status_bars,
+        "revenue_bars": revenue_bars,
+        "category_bars": category_bars,
+        "stock_bars": stock_bars,
     })
 
 

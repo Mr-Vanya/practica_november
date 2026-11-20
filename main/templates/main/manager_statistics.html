@@ -4,10 +4,48 @@
 <div class="wrap">
     <h1 class="page-title">Статистика магазина</h1>
     <div class="stats-grid">
-        <section class="stat-card card"><small>Заказы</small><strong>{{ order_count }}</strong></section>
-        <section class="stat-card card"><small>Выручка</small><strong>{{ revenue }} ₽</strong></section>
-        <section class="stat-card card"><small>Товары</small><strong>{{ product_count }}</strong></section>
-        <section class="stat-card card"><small>Остаток ≤ 3 шт.</small><strong>{{ low_stock }}</strong></section>
+        <section class="stat-card card">
+            <small>Заказы</small><strong>{{ order_count }}</strong>
+            <h2>Заказы по статусам</h2>
+            {% if order_status_bars %}
+                <ul class="stat-chart" aria-label="Количество заказов по статусам">
+                    {% for bar in order_status_bars %}
+                        <li><span class="stat-chart-label">{{ bar.label }}</span><span class="stat-chart-track"><span class="stat-chart-bar" style="width: {{ bar.width }}%"></span></span><strong>{{ bar.value }}</strong></li>
+                    {% endfor %}
+                </ul>
+            {% else %}<p class="muted">Пока нет данных для диаграммы.</p>{% endif %}
+        </section>
+        <section class="stat-card card">
+            <small>Выручка</small><strong>{{ revenue|floatformat:0 }} ₽</strong>
+            <h2>Выручка по месяцам</h2><p class="stat-chart-caption">Последние 6 месяцев, отменённые заказы не учитываются</p>
+            <ul class="stat-chart" aria-label="Выручка по месяцам">
+                {% for bar in revenue_bars %}
+                    <li><span class="stat-chart-label">{{ bar.label }}</span><span class="stat-chart-track"><span class="stat-chart-bar" style="width: {{ bar.width }}%"></span></span><strong>{{ bar.value|floatformat:0 }} ₽</strong></li>
+                {% endfor %}
+            </ul>
+        </section>
+        <section class="stat-card card">
+            <small>Товары</small><strong>{{ product_count }}</strong>
+            <h2>Товары по категориям</h2>
+            {% if category_bars %}
+                <ul class="stat-chart" aria-label="Количество товаров по категориям">
+                    {% for bar in category_bars %}
+                        <li><span class="stat-chart-label">{{ bar.label }}</span><span class="stat-chart-track"><span class="stat-chart-bar" style="width: {{ bar.width }}%"></span></span><strong>{{ bar.value }}</strong></li>
+                    {% endfor %}
+                </ul>
+            {% else %}<p class="muted">Пока нет данных для диаграммы.</p>{% endif %}
+        </section>
+        <section class="stat-card card">
+            <small>Остаток ≤ 3 шт.</small><strong>{{ low_stock }}</strong>
+            <h2>Малые остатки по товарам</h2>
+            {% if stock_bars %}
+                <ul class="stat-chart" aria-label="Остатки товаров, для которых осталось не больше трёх штук">
+                    {% for bar in stock_bars %}
+                        <li><span class="stat-chart-label">{{ bar.label }}</span><span class="stat-chart-track"><span class="stat-chart-bar stat-chart-bar-warning" style="width: {{ bar.width }}%"></span></span><strong>{{ bar.value }}</strong></li>
+                    {% endfor %}
+                </ul>
+            {% else %}<p class="muted">Нет товаров с остатком три штуки или меньше.</p>{% endif %}
+        </section>
     </div>
 </div>
 {% endblock %}
