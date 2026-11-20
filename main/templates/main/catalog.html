@@ -121,6 +121,11 @@
             <div class="product-grid product-grid-compact">
                 {% for product in page_obj %}
                     <article class="product-card card">
+                        {% if product.image %}
+                            <a class="product-card-image" href="{% url 'main:product_detail' product.pk %}" aria-label="Открыть {{ product.name }}">
+                                <img src="{{ product.image.url }}" alt="{{ product.name }}">
+                            </a>
+                        {% endif %}
                         <a class="product-name" href="{% url 'main:product_detail' product.pk %}">{{ product.name }}</a>
                         <div class="meta">{{ product.category }} · {{ product.min_age }}+ · {{ product.min_players }}–{{ product.max_players }} игроков · {% if product.duration_min %}{{ product.duration_min }} мин{% else %}длительность не указана{% endif %} · ★ {{ product.rating|default:'—' }}</div>
                         <div class="price">{{ product.price }} ₽</div>
