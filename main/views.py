@@ -68,7 +68,7 @@ def catalog(request):
     if request.GET.get("in_stock"): qs = qs.filter(stock__quantity__gt=0)
     min_price_value = request.GET.get("min_price", "").strip()
     max_price_value = request.GET.get("max_price", "").strip()
-    if request.GET.get("filter_price") and (min_price_value or max_price_value):
+    if min_price_value or max_price_value:
         try:
             min_price = Decimal(min_price_value) if min_price_value else None
             max_price = Decimal(max_price_value) if max_price_value else None

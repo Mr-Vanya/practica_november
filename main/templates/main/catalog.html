@@ -91,14 +91,10 @@
                         </div>
                     </details>
 
-                    <label class="filter-option">
-                        <input type="checkbox" name="filter_price" value="1" data-filter-toggle="min-price-control,max-price-control" {% if request.GET.filter_price %}checked{% endif %}>
-                        <span>Цена в диапазоне</span>
-                    </label>
                     <label class="field-label" for="min-price-control">Цена от, ₽</label>
-                    <input class="field" id="min-price-control" type="text" inputmode="decimal" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" pattern="[0-9]+([.][0-9]{1,2})?" name="min_price" value="{{ request.GET.min_price }}" {% if not request.GET.filter_price %}disabled{% endif %}>
+                    <input class="field" id="min-price-control" type="text" inputmode="decimal" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" pattern="[0-9]+([.][0-9]{1,2})?" name="min_price" value="{{ request.GET.min_price }}" placeholder="Например, 500">
                     <label class="field-label" for="max-price-control">Цена до, ₽</label>
-                    <input class="field" id="max-price-control" type="text" inputmode="decimal" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" pattern="[0-9]+([.][0-9]{1,2})?" name="max_price" value="{{ request.GET.max_price }}" {% if not request.GET.filter_price %}disabled{% endif %}>
+                    <input class="field" id="max-price-control" type="text" inputmode="decimal" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" pattern="[0-9]+([.][0-9]{1,2})?" name="max_price" value="{{ request.GET.max_price }}" placeholder="Например, 3000">
 
                     <label class="filter-option">
                         <input type="checkbox" name="in_stock" value="1" {% if request.GET.in_stock %}checked{% endif %}>
@@ -126,7 +122,7 @@
                 {% for product in page_obj %}
                     <article class="product-card card">
                         <a class="product-name" href="{% url 'main:product_detail' product.pk %}">{{ product.name }}</a>
-                        <div class="meta">{{ product.category }} · {{ product.min_age }}+ · ★ {{ product.rating|default:'—' }}</div>
+                        <div class="meta">{{ product.category }} · {{ product.min_age }}+ · {{ product.min_players }}–{{ product.max_players }} игроков · {% if product.duration_min %}{{ product.duration_min }} мин{% else %}длительность не указана{% endif %} · ★ {{ product.rating|default:'—' }}</div>
                         <div class="price">{{ product.price }} ₽</div>
                         <div class="stock">{% if product.stock.quantity %}В наличии · {{ product.stock.quantity }} шт.{% else %}Нет в наличии{% endif %}</div>
                     </article>

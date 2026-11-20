@@ -113,6 +113,38 @@ button {
     margin: 0;
 }
 
+.header-actions > .cart-link { position: relative; overflow: visible; }
+.cart-count {
+    display: inline-grid;
+    min-width: 20px;
+    height: 20px;
+    place-items: center;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: var(--color-primary);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1;
+}
+.header-actions > .cart-link > .cart-count {
+    position: absolute;
+    top: -9px;
+    right: -9px;
+    z-index: 2;
+    display: grid;
+}
+.mobile-cart-icon { position: relative; display: inline-block; }
+.mobile-cart-icon .cart-count {
+    position: absolute;
+    top: -7px;
+    right: -13px;
+    min-width: 17px;
+    height: 17px;
+    padding: 0 4px;
+    font-size: 10px;
+}
+
 .site-main {
     flex: 1;
 }

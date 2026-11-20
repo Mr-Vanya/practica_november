@@ -23,7 +23,7 @@
             {% for product in products %}
                 <article class="product-card card">
                     <a class="product-name" href="{% url 'main:product_detail' product.pk %}">{{ product.name }}</a>
-                    <div class="meta">{{ product.category }} · {{ product.min_age }}+</div>
+                    <div class="meta">{{ product.category }} · {{ product.min_age }}+ · {{ product.min_players }}–{{ product.max_players }} игроков · {% if product.duration_min %}{{ product.duration_min }} мин{% else %}длительность не указана{% endif %}</div>
                     <div class="price">{{ product.price }} ₽</div>
                     <div class="stock">
                         {% if product.stock.quantity %}В наличии · {{ product.stock.quantity }} шт.{% else %}Нет в наличии{% endif %}
