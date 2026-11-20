@@ -208,6 +208,32 @@ button {
 .return-decision-form { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .return-decision-form .btn { min-height: 36px; padding: 7px 10px; font-size: 12px; }
 
+.notification-nav-link { display: inline-flex; align-items: center; gap: 6px; }
+.notification-badge {
+    display: inline-grid;
+    min-width: 18px;
+    height: 18px;
+    place-items: center;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: var(--color-primary);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 800;
+    line-height: 1;
+}
+.notification-list { display: grid; gap: 12px; }
+.notification-card { padding: 18px; border-left: 4px solid transparent; }
+.notification-card.is-unread { border-left-color: var(--color-primary); background: #fbfaff; }
+.notification-card-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.notification-card-heading h2 { margin: 0; font-size: 17px; }
+.notification-card-heading time { flex: 0 0 auto; color: var(--color-muted); font-size: 12px; }
+.notification-card > p { margin: 10px 0; }
+.notification-card-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; font-size: 13px; }
+.notification-card-actions form { margin: 0; }
+.text-button { padding: 0; border: 0; background: transparent; color: var(--color-primary); font: inherit; cursor: pointer; }
+.text-button:hover { text-decoration: underline; }
+
 .site-main {
     flex: 1;
 }

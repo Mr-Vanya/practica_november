@@ -17,8 +17,14 @@ from django.views.decorators.http import require_POST
 
 from .models import (
     Cart, CartItem, Category, CustomerOrder, Manufacturer, OrderItem, OrderStatus,
-    Product, Review, Stock,
+    Notification, Product, Review, Stock,
 )
+
+
+def _create_order_notification(order, title, message):
+    Notification.objects.create(
+        user=order.user, order=order, title=title, message=message
+    )
 
 
 def home(request):
@@ -215,6 +221,11 @@ def checkout(request):
                         number="ORD-" + uuid.uuid4().hex[:8].upper(), user=request.user, status=status, total=total,
                         contact_name=request.POST["contact_name"].strip(), phone=request.POST["phone"].strip(),
                         email=request.POST["email"].strip(), pickup_point=request.POST["pickup_point"].strip())
+                    _create_order_notification(
+                        order,
+                        "Заказ создан",
+                        f"Заказ {order.number} оформлен. Текущий статус: {order.status.name}.",
+                    )
                     for item, stock in locked:
                         OrderItem.objects.create(order=order, product=item.product, quantity=item.quantity, unit_price=item.product.price)
                         stock.quantity -= item.quantity; stock.save(update_fields=["quantity"])
@@ -276,7 +287,9 @@ def order_cancel(request, order_id):
                 stock, _ = Stock.objects.select_for_update().get_or_create(product=item.product)
                 stock.quantity += item.quantity; stock.save(update_fields=["quantity"])
             order.status, _ = OrderStatus.objects.get_or_create(name="Отменён")
-            order.save(update_fields=["status"]); messages.success(request, "Заказ отменён, остаток возвращён.")
+            order.save(update_fields=["status"])
+            _create_order_notification(order, "Статус заказа изменён", f"Заказ {order.number} отменён.")
+            messages.success(request, "Заказ отменён, остаток возвращён.")
     return redirect("main:order_detail", order_id=order_id)
 
 
@@ -300,6 +313,11 @@ def order_return_request(request, order_id):
             order.return_reason = reason[:1000]
             order.return_status = "pending"
             order.save(update_fields=["return_reason", "return_status"])
+            _create_order_notification(
+                order,
+                "Заявка на возврат отправлена",
+                f"Заявка на возврат заказа {order.number} отправлена и ожидает решения менеджера.",
+            )
             messages.success(
                 request,
                 "Заявка на возврат оформлена. Дождитесь решения менеджера.",
@@ -381,12 +399,19 @@ def manager_orders(request):
             if new_status not in statuses:
                 messages.error(request, "Выберите статус из списка.")
                 return redirect("main:manager_orders")
+            old_status = order.status.name
             if new_status == "Отменён" and order.status.name != "Отменён":
                 for item in order.items.select_related("product"):
                     stock, _ = Stock.objects.select_for_update().get_or_create(product=item.product)
                     stock.quantity += item.quantity; stock.save(update_fields=["quantity"])
             status, _ = OrderStatus.objects.get_or_create(name=new_status)
             order.status = status; order.save(update_fields=["status"])
+            if old_status != new_status:
+                _create_order_notification(
+                    order,
+                    "Статус заказа изменён",
+                    f"Статус заказа {order.number} изменён: «{old_status}» → «{new_status}».",
+                )
         messages.success(request, "Статус заказа обновлён.")
         return redirect("main:manager_orders")
     return render(request, "main/manager_orders.html", {
@@ -410,11 +435,41 @@ def manager_return_decision(request, order_id):
         else:
             order.return_status = decision
             order.save(update_fields=["return_status"])
+            decision_text = "одобрена" if decision == "approved" else "отклонена"
+            _create_order_notification(
+                order,
+                "Решение по возврату",
+                f"Заявка на возврат заказа {order.number} {decision_text} менеджером.",
+            )
             messages.success(
                 request,
                 "Возврат одобрен." if decision == "approved" else "Возврат отклонён.",
             )
     return redirect("main:manager_orders")
+
+
+@login_required
+def notification_list(request):
+    notifications = Notification.objects.filter(user=request.user).select_related("order")
+    return render(request, "main/notifications.html", {"notifications": notifications})
+
+
+@login_required
+@require_POST
+def notification_mark_read(request, notification_id):
+    notification = get_object_or_404(Notification, pk=notification_id, user=request.user)
+    notification.is_read = True
+    notification.save(update_fields=["is_read"])
+    if notification.order_id:
+        return redirect("main:order_detail", order_id=notification.order_id)
+    return redirect("main:notifications")
+
+
+@login_required
+@require_POST
+def notification_mark_all_read(request):
+    Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
+    return redirect("main:notifications")
 
 
 @user_passes_test(manager_required)

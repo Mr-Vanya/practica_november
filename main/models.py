@@ -213,6 +213,29 @@ class CustomerOrder(models.Model):
         return self.number
 
 
+class Notification(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+        related_name="notifications", verbose_name="Получатель"
+    )
+    order = models.ForeignKey(
+        CustomerOrder, on_delete=models.CASCADE,
+        related_name="notifications", null=True, blank=True, verbose_name="Заказ"
+    )
+    title = models.CharField("Заголовок", max_length=160)
+    message = models.TextField("Сообщение")
+    created_at = models.DateTimeField("Создано", auto_now_add=True)
+    is_read = models.BooleanField("Прочитано", default=False)
+
+    class Meta:
+        verbose_name = "уведомление"
+        verbose_name_plural = "Уведомления"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.title} — {self.user}"
+
+
 class OrderItem(models.Model):
     order = models.ForeignKey(
         CustomerOrder, on_delete=models.CASCADE,
