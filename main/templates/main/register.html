@@ -17,6 +17,10 @@
             <label for="{{ form.password2.id_for_label }}">Подтверждение пароля</label>
             {{ form.password2 }}
             {{ form.password2.errors }}
+
+            <label for="">
+                
+            </label>
             <button class="btn" type="submit">Создать аккаунт</button>
         </form>
         <p>Уже зарегистрированы? <a href="{% url 'main:login' %}">Войти</a></p>

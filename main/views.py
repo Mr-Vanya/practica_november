@@ -341,10 +341,14 @@ def manager_product_edit(request, product_id):
 
 @user_passes_test(manager_required)
 def manager_orders(request):
+    statuses = ["Новый", "Подтверждён", "Собран", "Подготовлен к выдаче", "Завершён", "Отменён"]
     if request.method == "POST":
         with transaction.atomic():
             order = get_object_or_404(CustomerOrder.objects.select_for_update(), pk=request.POST.get("order_id"))
-            new_status = request.POST.get("status", "Новый")
+            new_status = request.POST.get("status", "")
+            if new_status not in statuses:
+                messages.error(request, "Выберите статус из списка.")
+                return redirect("main:manager_orders")
             if new_status == "Отменён" and order.status.name != "Отменён":
                 for item in order.items.select_related("product"):
                     stock, _ = Stock.objects.select_for_update().get_or_create(product=item.product)
@@ -353,7 +357,10 @@ def manager_orders(request):
             order.status = status; order.save(update_fields=["status"])
         messages.success(request, "Статус заказа обновлён.")
         return redirect("main:manager_orders")
-    return render(request, "main/manager_orders.html", {"orders": CustomerOrder.objects.select_related("user", "status")})
+    return render(request, "main/manager_orders.html", {
+        "orders": CustomerOrder.objects.select_related("user", "status"),
+        "statuses": statuses,
+    })
 
 
 @user_passes_test(manager_required)
