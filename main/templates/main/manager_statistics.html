@@ -39,6 +39,7 @@
             <small>Остаток ≤ 3 шт.</small><strong>{{ low_stock }}</strong>
             <h2>Малые остатки по товарам</h2>
             {% if stock_bars %}
+                <p class="stat-chart-caption">Первые {{ stock_bars|length }} позиций; полный список — в разделе «Подробнее»</p>
                 <ul class="stat-chart" aria-label="Остатки товаров, для которых осталось не больше трёх штук">
                     {% for bar in stock_bars %}
                         <li><span class="stat-chart-label">{{ bar.label }}</span><span class="stat-chart-track"><span class="stat-chart-bar stat-chart-bar-warning" style="width: {{ bar.width }}%"></span></span><strong>{{ bar.value }}</strong></li>
@@ -47,5 +48,82 @@
             {% else %}<p class="muted">Нет товаров с остатком три штуки или меньше.</p>{% endif %}
         </section>
     </div>
+
+    <section class="stats-detail-section" aria-labelledby="stats-detail-title">
+        <h2 id="stats-detail-title">Подробная статистика</h2>
+        <p class="muted">Раскройте нужный раздел, чтобы посмотреть записи и точные значения.</p>
+        <div class="stats-detail-grid">
+            <details class="stats-detail card" id="stats-detail-orders">
+                <summary>Подробнее: заказы</summary>
+                <div class="stats-detail-content">
+                    <h3>Последние 20 заказов</h3>
+                    <div class="table-scroll">
+                        <table class="data-table">
+                            <thead><tr><th>Номер</th><th>Дата</th><th>Покупатель</th><th>Сумма</th><th>Статус</th></tr></thead>
+                            <tbody>
+                                {% for order in recent_orders %}
+                                    <tr><td><a href="{% url 'main:order_detail' order.pk %}">{{ order.number }}</a></td><td>{{ order.created_at|date:'d.m.Y H:i' }}</td><td>{{ order.user }}</td><td>{{ order.total }} ₽</td><td>{{ order.status }}</td></tr>
+                                {% empty %}<tr><td colspan="5">Заказов пока нет.</td></tr>{% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </details>
+
+            <details class="stats-detail card" id="stats-detail-revenue">
+                <summary>Подробнее: выручка</summary>
+                <div class="stats-detail-content">
+                    <h3>Выручка за последние 6 месяцев</h3>
+                    <div class="table-scroll">
+                        <table class="data-table">
+                            <thead><tr><th>Месяц</th><th>Сумма заказов</th></tr></thead>
+                            <tbody>
+                                {% for row in revenue_month_rows %}<tr><td>{{ row.label }}</td><td>{{ row.value|floatformat:2 }} ₽</td></tr>{% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="stat-chart-caption">Отменённые заказы исключены.</p>
+                </div>
+            </details>
+
+            <details class="stats-detail card" id="stats-detail-products">
+                <summary>Подробнее: товары и категории</summary>
+                <div class="stats-detail-content">
+                    <h3>Количество товаров в категориях</h3>
+                    <div class="table-scroll">
+                        <table class="data-table">
+                            <thead><tr><th>Категория</th><th>Товаров</th></tr></thead>
+                            <tbody>
+                                {% for row in category_rows %}<tr><td>{{ row.category__name }}</td><td>{{ row.value }}</td></tr>{% empty %}<tr><td colspan="2">Товаров пока нет.</td></tr>{% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </details>
+
+            <details class="stats-detail card" id="stats-detail-inventory">
+                <summary>Подробнее: остатки всех игр ({{ inventory_rows|length }})</summary>
+                <div class="stats-detail-content">
+                    <p class="stat-chart-caption">В списке все товары. Если запись склада отсутствует, остаток показан как 0.</p>
+                    <div class="table-scroll">
+                        <table class="data-table">
+                            <thead><tr><th>Игра</th><th>Категория</th><th>Производитель</th><th>Статус</th><th>Остаток</th></tr></thead>
+                            <tbody>
+                                {% for product in inventory_rows %}
+                                    <tr>
+                                        <td>{{ product.name }}</td>
+                                        <td>{{ product.category.name }}</td>
+                                        <td>{{ product.manufacturer.name }}</td>
+                                        <td>{% if product.is_active %}В каталоге{% else %}Скрыт{% endif %}</td>
+                                        <td>{% if product.stock_quantity <= 3 %}<strong class="stock-warning">{{ product.stock_quantity }} шт.</strong>{% else %}{{ product.stock_quantity }} шт.{% endif %}</td>
+                                    </tr>
+                                {% empty %}<tr><td colspan="5">Товаров пока нет.</td></tr>{% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </details>
+        </div>
+    </section>
 </div>
 {% endblock %}

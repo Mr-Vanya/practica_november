@@ -198,6 +198,11 @@ class CustomerOrder(models.Model):
         "Статус возврата", max_length=20, choices=RETURN_STATUS_CHOICES, blank=True
     )
     return_reason = models.TextField("Причина возврата", blank=True)
+    return_product = models.ForeignKey(
+        Product, on_delete=models.PROTECT, related_name="return_requests",
+        null=True, blank=True, verbose_name="Товар для возврата"
+    )
+    return_quantity = models.PositiveSmallIntegerField("Количество для возврата", default=0)
 
     class Meta:
         verbose_name = "заказ"

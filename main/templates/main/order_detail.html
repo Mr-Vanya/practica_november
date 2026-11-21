@@ -3,9 +3,15 @@
 {% block content %}
 <div class="wrap">
     <div class="breadcrumb"><a href="{% url 'main:orders' %}">Мои заказы</a> / {{ order.number }}</div>
+    <div class="order-print-heading"><strong>Meeple</strong><span>Информация о заказе</span></div>
     <h1 class="page-title">Заказ {{ order.number }}</h1>
     <span class="badge badge-success">{{ order.status }}</span>
+    <div class="order-actions">
+        <button class="btn btn-secondary" type="button" onclick="window.print()">Печать / сохранить PDF</button>
+        <a class="btn btn-secondary" href="{% url 'main:order_export_csv' order.pk %}">Скачать CSV</a>
+    </div>
     <section class="order-detail-card card">
+        <h2 class="card-title">Состав заказа</h2>
         {% for item in order.items.all %}
             <div class="summary-row"><span>{{ item.product.name }} × {{ item.quantity }}</span><strong>{{ item.unit_price }} ₽</strong></div>
         {% endfor %}
@@ -16,6 +22,16 @@
             </form>
         {% endif %}
     </section>
+    <section class="order-customer-info card">
+        <h2 class="card-title">Получатель и получение</h2>
+        <dl>
+            <dt>Получатель</dt><dd>{{ order.contact_name }}</dd>
+            <dt>Телефон</dt><dd>{{ order.phone }}</dd>
+            <dt>Электронная почта</dt><dd>{{ order.email }}</dd>
+            <dt>Пункт выдачи</dt><dd>{{ order.pickup_point }}</dd>
+            <dt>Дата заказа</dt><dd>{{ order.created_at|date:'d.m.Y H:i' }}</dd>
+        </dl>
+    </section>
 
     {% if order.return_status %}
         <section class="return-request-card card" aria-live="polite">
@@ -25,6 +41,7 @@
                 {% elif order.return_status == 'approved' %}Возврат одобрен
                 {% elif order.return_status == 'rejected' %}Возврат отклонён{% endif %}
             </p>
+            <p><strong>Товар:</strong> {{ order.return_product.name|default:'—' }}{% if order.return_quantity %}, {{ order.return_quantity }} шт.{% endif %}</p>
             <p><strong>Причина:</strong> {{ order.return_reason|linebreaksbr }}</p>
             {% if order.return_status == 'pending' %}<p class="muted">Дождитесь решения менеджера. Статус заявки появится здесь.</p>{% endif %}
         </section>
@@ -38,7 +55,15 @@
             <form method="post" action="{% url 'main:order_return_request' order.pk %}" class="return-dialog-form">
                 {% csrf_token %}
                 <h2 id="return-dialog-title">Причина возврата</h2>
-                <p class="muted">Опишите, почему хотите вернуть заказ. После отправки дождитесь решения менеджера.</p>
+                <p class="muted">Выберите игру и количество. После отправки заявки дождитесь решения менеджера.</p>
+                <label class="field-label" for="return-product">Какой товар вернуть</label>
+                <select class="field" id="return-product" name="return_product" data-return-product required>
+                    {% for item in order.items.all %}
+                        <option value="{{ item.product_id }}" data-ordered-quantity="{{ item.quantity }}">{{ item.product.name }} (в заказе: {{ item.quantity }} шт.)</option>
+                    {% endfor %}
+                </select>
+                <label class="field-label" for="return-quantity">Количество</label>
+                <select class="field" id="return-quantity" name="return_quantity" data-return-quantity required></select>
                 <label class="field-label" for="return-reason">Причина</label>
                 <textarea class="field" id="return-reason" name="reason" maxlength="1000" required rows="5" placeholder="Напишите причину возврата"></textarea>
                 <div class="return-dialog-actions">

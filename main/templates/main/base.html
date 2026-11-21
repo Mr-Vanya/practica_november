@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}Meeple — настольные игры{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'main/css/site.css' %}?v=20261121-stat-charts">
+    <link rel="stylesheet" href="{% static 'main/css/site.css' %}?v=20261122-rules-help">
     <link rel="stylesheet" href="{% block extra_css %}{% endblock %}">
     {% block extra_head %}{% endblock %}
 </head>
@@ -67,7 +67,7 @@
         <div class="footer-inner">
             <a class="brand" href="{% url 'main:home' %}"><b>●</b> meeple</a>
             <span>Учебный интернет-магазин настольных игр</span>
-            <a href="{% url 'main:help' %}">Помощь</a>
+            <a href="{% url 'main:rules_help' %}">Правила и помощь</a>
         </div>
     </footer>
 
@@ -101,7 +101,7 @@
         {% endif %}
     </nav>
 
-    <script src="{% static 'main/js/site.js' %}?v=20261120-returns"></script>
+    <script src="{% static 'main/js/site.js' %}?v=20261122-return-item"></script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>

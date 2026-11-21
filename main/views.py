@@ -1,6 +1,8 @@
+import csv
+import io
 import json
 import uuid
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
@@ -9,13 +11,13 @@ from django.contrib.auth.forms import UserCreationForm
 from django.core.paginator import Paginator
 from django.db.models.deletion import ProtectedError
 from django.db import transaction
-from django.db.models import Avg, F, Q, Sum, Count
-from django.db.models.functions import TruncMonth
-from django.http import JsonResponse
+from django.db.models import Avg, F, Q, Sum, Count, IntegerField, Value
+from django.db.models.functions import Coalesce, TruncMonth
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_GET, require_POST
 
 from .models import (
     Cart, CartItem, Category, CustomerOrder, Manufacturer, OrderItem, OrderStatus,
@@ -279,6 +281,44 @@ def order_detail(request, order_id):
 
 
 @login_required
+def order_export_csv(request, order_id):
+    order_query = CustomerOrder.objects.select_related("status", "user").prefetch_related("items__product")
+    if request.user.is_staff or request.user.groups.filter(name="Менеджер").exists():
+        order = get_object_or_404(order_query, pk=order_id)
+    else:
+        order = get_object_or_404(order_query, pk=order_id, user=request.user)
+
+    output = io.StringIO(newline="")
+    output.write("\ufeff")
+    writer = csv.writer(output)
+    writer.writerow([
+        "Номер заказа", "Дата", "Статус", "Получатель", "Телефон",
+        "Электронная почта", "Пункт выдачи", "Товар", "Количество",
+        "Цена за единицу, ₽", "Сумма позиции, ₽",
+    ])
+
+    def safe_cell(value):
+        text = str(value if value is not None else "")
+        if text.startswith(("=", "+", "-", "@", "\t", "\r")):
+            return "'" + text
+        return text
+
+    order_date = timezone.localtime(order.created_at).strftime("%d.%m.%Y %H:%M")
+    for item in order.items.all():
+        writer.writerow([
+            safe_cell(order.number), order_date, safe_cell(order.status.name),
+            safe_cell(order.contact_name), safe_cell(order.phone), safe_cell(order.email),
+            safe_cell(order.pickup_point), safe_cell(item.product.name), item.quantity,
+            str(item.unit_price), str(item.unit_price * item.quantity),
+        ])
+    writer.writerow(["", "", "", "", "", "", "", "ИТОГО", "", "", str(order.total)])
+
+    response = HttpResponse(output.getvalue(), content_type="text/csv; charset=utf-8")
+    response["Content-Disposition"] = f'attachment; filename="order_{order.number}.csv"'
+    return response
+
+
+@login_required
 @require_POST
 def order_cancel(request, order_id):
     with transaction.atomic():
@@ -299,6 +339,12 @@ def order_cancel(request, order_id):
 @require_POST
 def order_return_request(request, order_id):
     reason = request.POST.get("reason", "").strip()
+    try:
+        product_id = int(request.POST.get("return_product", ""))
+        return_quantity = int(request.POST.get("return_quantity", ""))
+    except (TypeError, ValueError):
+        product_id = None
+        return_quantity = 0
     with transaction.atomic():
         order = get_object_or_404(
             CustomerOrder.objects.select_for_update(), pk=order_id, user=request.user
@@ -312,18 +358,26 @@ def order_return_request(request, order_id):
         elif not reason:
             messages.error(request, "Укажите причину возврата.")
         else:
-            order.return_reason = reason[:1000]
-            order.return_status = "pending"
-            order.save(update_fields=["return_reason", "return_status"])
-            _create_order_notification(
-                order,
-                "Заявка на возврат отправлена",
-                f"Заявка на возврат заказа {order.number} отправлена и ожидает решения менеджера.",
-            )
-            messages.success(
-                request,
-                "Заявка на возврат оформлена. Дождитесь решения менеджера.",
-            )
+            order_item = order.items.select_for_update().filter(product_id=product_id).select_related("product").first() if product_id else None
+            if order_item is None:
+                messages.error(request, "Выберите товар из этого заказа.")
+            elif return_quantity < 1 or return_quantity > order_item.quantity:
+                messages.error(request, f"Количество для возврата должно быть от 1 до {order_item.quantity}.")
+            else:
+                order.return_reason = reason[:1000]
+                order.return_product = order_item.product
+                order.return_quantity = return_quantity
+                order.return_status = "pending"
+                order.save(update_fields=["return_reason", "return_product", "return_quantity", "return_status"])
+                _create_order_notification(
+                    order,
+                    "Заявка на возврат отправлена",
+                    f"Заявка на возврат заказа {order.number} ({order_item.product.name}, {return_quantity} шт.) отправлена и ожидает решения менеджера.",
+                )
+                messages.success(
+                    request,
+                    "Заявка на возврат оформлена. Дождитесь решения менеджера.",
+                )
     return redirect("main:order_detail", order_id=order_id)
 
 
@@ -335,6 +389,10 @@ def help_page(request):
         "player_options": sorted({n for low, high in Product.objects.filter(is_active=True).values_list("min_players", "max_players") for n in range(low, high + 1)}),
         "duration_options": Product.objects.filter(is_active=True, duration_min__isnull=False).values_list("duration_min", flat=True).distinct().order_by("duration_min"),
     })
+
+
+def rules_help_page(request):
+    return render(request, "main/rules_help.html")
 
 
 def manager_required(user): return user.is_authenticated and (user.is_staff or user.groups.filter(name="Менеджер").exists())
@@ -489,11 +547,16 @@ def manager_statistics(request):
         .annotate(value=Count("id"))
         .order_by("-value", "category__name")
     )
-    low_stock_products = list(
-        Stock.objects.filter(quantity__lte=3)
-        .values("product__name", "quantity")
-        .order_by("quantity", "product__name")[:10]
+    inventory_rows = list(
+        Product.objects.select_related("category", "manufacturer")
+        .annotate(stock_quantity=Coalesce("stock__quantity", Value(0), output_field=IntegerField()))
+        .order_by("stock_quantity", "name")
     )
+    low_stock_products = [
+        {"product__name": product.name, "quantity": product.stock_quantity}
+        for product in inventory_rows if product.stock_quantity <= 3
+    ]
+    low_stock_count = len(low_stock_products)
 
     month_names = ["янв", "фев", "мар", "апр", "май", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"]
     today = timezone.localdate()
@@ -530,19 +593,122 @@ def manager_statistics(request):
     category_bars = make_bars(category_rows, "category__name")
     revenue_bars = make_bars(revenue_month_rows, "label")
     stock_bars = make_bars(low_stock_products, "product__name", "quantity")
+    recent_orders = CustomerOrder.objects.select_related("user", "status").order_by("-created_at")[:20]
 
     return render(request, "main/manager_statistics.html", {
         "order_count": CustomerOrder.objects.count(),
         "revenue": revenue,
         "product_count": Product.objects.count(),
-        "low_stock": Stock.objects.filter(quantity__lte=3).count(),
+        "low_stock": low_stock_count,
         "order_status_bars": status_bars,
         "revenue_bars": revenue_bars,
         "category_bars": category_bars,
-        "stock_bars": stock_bars,
+        "stock_bars": stock_bars[:10],
+        "inventory_rows": inventory_rows,
+        "recent_orders": recent_orders,
+        "category_rows": category_rows,
+        "revenue_month_rows": revenue_month_rows,
     })
 
 
+@require_GET
 def catalog_json(request):
-    products = Product.objects.filter(is_active=True).values("id", "name", "price", "category__name")
-    return JsonResponse({"results": list(products)})
+    products = Product.objects.filter(is_active=True).select_related(
+        "category", "manufacturer", "stock"
+    ).annotate(rating=Avg("reviews__rating"))
+
+    query = request.GET.get("q", "").strip()
+    if query:
+        products = products.filter(
+            Q(name__icontains=query)
+            | Q(description__icontains=query)
+            | Q(category__name__icontains=query)
+        )
+
+    categories = [value for value in request.GET.getlist("category") if value]
+    if categories:
+        products = products.filter(category__slug__in=categories)
+
+    manufacturers = [
+        int(value) for value in request.GET.getlist("manufacturer") if value.isdigit()
+    ]
+    if manufacturers:
+        products = products.filter(manufacturer_id__in=manufacturers)
+
+    languages = [value.strip() for value in request.GET.getlist("language") if value.strip()]
+    if languages:
+        language_query = Q()
+        for language in languages:
+            language_query |= Q(language__iexact=language)
+        products = products.filter(language_query)
+
+    ages = [int(value) for value in request.GET.getlist("age") if value.isdigit()]
+    if ages:
+        products = products.filter(min_age__in=ages)
+
+    durations = [int(value) for value in request.GET.getlist("duration") if value.isdigit()]
+    if durations:
+        products = products.filter(duration_min__in=durations)
+
+    players = [int(value) for value in request.GET.getlist("players") if value.isdigit()]
+    if players:
+        player_query = Q()
+        for count in players:
+            player_query |= Q(min_players__lte=count, max_players__gte=count)
+        products = products.filter(player_query)
+
+    if request.GET.get("in_stock"):
+        products = products.filter(stock__quantity__gt=0)
+
+    min_value = request.GET.get("min_price", "").strip()
+    max_value = request.GET.get("max_price", "").strip()
+    try:
+        min_price = Decimal(min_value) if min_value else None
+        max_price = Decimal(max_value) if max_value else None
+    except (InvalidOperation, ValueError):
+        return JsonResponse({"error": "Введите корректную цену."}, status=400)
+    if (min_price is not None and not min_price.is_finite()) or (max_price is not None and not max_price.is_finite()):
+        return JsonResponse({"error": "Введите конечное числовое значение цены."}, status=400)
+    if (min_price is not None and min_price < 0) or (max_price is not None and max_price < 0):
+        return JsonResponse({"error": "Цена не может быть отрицательной."}, status=400)
+    if min_price is not None and max_price is not None and min_price > max_price:
+        return JsonResponse({"error": "Цена «от» не может быть выше цены «до»."}, status=400)
+    if min_price is not None:
+        products = products.filter(price__gte=min_price)
+    if max_price is not None:
+        products = products.filter(price__lte=max_price)
+
+    sort = request.GET.get("sort", "name")
+    if sort in {"price", "-price", "name", "-rating"}:
+        products = products.order_by(sort)
+
+    page = Paginator(products, 20).get_page(request.GET.get("page"))
+    results = []
+    for product in page.object_list:
+        try:
+            stock_quantity = product.stock.quantity
+        except Stock.DoesNotExist:
+            stock_quantity = 0
+        results.append({
+            "id": product.pk,
+            "name": product.name,
+            "detail_url": reverse("main:product_detail", args=[product.pk]),
+            "image_url": product.image.url if product.image else "",
+            "category": product.category.name,
+            "min_age": product.min_age,
+            "min_players": product.min_players,
+            "max_players": product.max_players,
+            "duration_min": product.duration_min,
+            "rating": float(product.rating) if product.rating is not None else None,
+            "price": str(product.price),
+            "stock_quantity": stock_quantity,
+        })
+
+    return JsonResponse({
+        "results": results,
+        "total": page.paginator.count,
+        "page": page.number,
+        "num_pages": page.paginator.num_pages,
+        "has_previous": page.has_previous(),
+        "has_next": page.has_next(),
+    })

@@ -1,0 +1,75 @@
+{% extends 'main/base.html' %}
+{% block title %}Правила и помощь — Meeple{% endblock %}
+{% block content %}
+<div class="wrap rules-help-page">
+    <div class="breadcrumb"><a href="{% url 'main:home' %}">Главная</a> / Правила и помощь</div>
+    <header class="rules-help-heading">
+        <p class="eyebrow">ПОДСКАЗКИ ПО МАГАЗИНУ</p>
+        <h1 class="page-title">Правила и помощь</h1>
+        <p>Как выбрать настольную игру, оформить заказ и посмотреть его статус.</p>
+        <a class="btn" href="{% url 'main:help' %}">Подобрать игру</a>
+    </header>
+
+    <section class="rules-help-section" aria-labelledby="choose-game-title">
+        <h2 id="choose-game-title">Как выбрать игру</h2>
+        <div class="help-guide-grid">
+            <article class="help-guide-card card">
+                <span class="help-guide-number">01</span>
+                <h3>Учитывайте компанию</h3>
+                <p>Проверьте диапазон игроков в карточке игры. Выбирайте игру, рассчитанную на количество участников, которые будут играть одновременно.</p>
+            </article>
+            <article class="help-guide-card card">
+                <span class="help-guide-number">02</span>
+                <h3>Проверьте возраст</h3>
+                <p>Возрастная отметка помогает подобрать игру для детей или взрослых. Учитывайте её вместе с составом компании и опытом игроков.</p>
+            </article>
+            <article class="help-guide-card card">
+                <span class="help-guide-number">03</span>
+                <h3>Оцените длительность</h3>
+                <p>Сравните время партии с планами на вечер. Если длительность не указана в карточке, уточните информацию перед выбором.</p>
+            </article>
+            <article class="help-guide-card card">
+                <span class="help-guide-number">04</span>
+                <h3>Используйте каталог</h3>
+                <p>В каталоге можно искать по названию или категории и сочетать фильтры: категорию, производителя, язык, возраст, длительность, игроков, цену и наличие.</p>
+            </article>
+        </div>
+    </section>
+
+    <section class="rules-help-section" aria-labelledby="checkout-title">
+        <h2 id="checkout-title">Как оформить заказ</h2>
+        <ol class="checkout-steps card">
+            <li><strong>Добавьте игру в корзину.</strong> На странице товара можно проверить описание, характеристики и доступный остаток.</li>
+            <li><strong>Проверьте корзину.</strong> Уточните товары и количество. Итоговая сумма пересчитывается автоматически.</li>
+            <li><strong>Заполните данные заказа.</strong> Укажите имя получателя, телефон, электронную почту и пункт выдачи.</li>
+            <li><strong>Подтвердите оформление.</strong> Перед созданием заказа система проверит наличие выбранного количества.</li>
+            <li><strong>Следите за статусом.</strong> Откройте заказ в разделе «Мои заказы» или посмотрите уведомления в профиле.</li>
+        </ol>
+        <a class="btn btn-secondary" href="{% url 'main:catalog' %}">Перейти в каталог</a>
+    </section>
+
+    <section class="rules-help-section" aria-labelledby="order-rules-title">
+        <h2 id="order-rules-title">Изменение и возврат заказа</h2>
+        <div class="faq-list">
+            <details class="faq-item card">
+                <summary>Как отменить заказ?</summary>
+                <p>Откройте заказ в разделе «Мои заказы» и нажмите «Отменить заказ», если он ещё не завершён и не отменён. После отмены количество товара возвращается в остаток.</p>
+            </details>
+            <details class="faq-item card">
+                <summary>Как подать заявку на возврат?</summary>
+                <p>Для завершённого заказа откройте его, нажмите «Оформить возврат», выберите игру и количество, укажите причину и отправьте заявку. Дождитесь решения менеджера; статус заявки появится в заказе и уведомлениях.</p>
+            </details>
+            <details class="faq-item card">
+                <summary>Где проверить, что происходит с заказом?</summary>
+                <p>Статус отображается в карточке заказа. Изменения статуса также сохраняются в центре уведомлений, доступном из профиля.</p>
+            </details>
+            <details class="faq-item card">
+                <summary>Что делать, если игра закончилась?</summary>
+                <p>Проверьте отметку «В наличии» в каталоге. Если во время оформления выбранного количества уже нет, система сообщит об этом и не создаст заказ.</p>
+            </details>
+        </div>
+    </section>
+
+    <p class="rules-help-contact muted">При вопросах по конкретному заказу проверьте указанные при оформлении телефон и электронную почту, а также статус заказа в личном кабинете.</p>
+</div>
+{% endblock %}

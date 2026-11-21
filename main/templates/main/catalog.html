@@ -107,7 +107,7 @@
             </form>
         </aside>
 
-        <section class="catalog-results" aria-label="Результаты поиска">
+        <section class="catalog-results" aria-label="Результаты поиска" data-catalog-api="{% url 'main:catalog_json' %}" data-catalog-path="{% url 'main:catalog' %}">
             <div class="catalog-search">
                 <select class="field" form="catalog-filter-form" name="sort" aria-label="Сортировка">
                     <option value="name" {% if selected_sort == 'name' %}selected{% endif %}>По названию</option>
@@ -118,7 +118,8 @@
                 <button class="btn btn-secondary" form="catalog-filter-form" type="submit">Найти</button>
             </div>
 
-            <div class="product-grid product-grid-compact">
+            <p class="catalog-result-status" data-catalog-status role="status" aria-live="polite">Найдено товаров: {{ page_obj.paginator.count }}</p>
+            <div class="product-grid product-grid-compact" data-catalog-results>
                 {% for product in page_obj %}
                     <article class="product-card card">
                         {% if product.image %}
@@ -136,13 +137,13 @@
                 {% endfor %}
             </div>
 
-            {% if page_obj.has_other_pages %}
-                <nav class="pagination" aria-label="Страницы каталога">
+            <nav class="pagination" data-catalog-pagination aria-label="Страницы каталога">
+                {% if page_obj.has_other_pages %}
                     {% if page_obj.has_previous %}<a href="?{{ query_string }}{% if query_string %}&amp;{% endif %}page={{ page_obj.previous_page_number }}">← Назад</a>{% endif %}
                     <span>Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
                     {% if page_obj.has_next %}<a href="?{{ query_string }}{% if query_string %}&amp;{% endif %}page={{ page_obj.next_page_number }}">Далее →</a>{% endif %}
-                </nav>
-            {% endif %}
+                {% endif %}
+            </nav>
         </section>
     </div>
 </div>

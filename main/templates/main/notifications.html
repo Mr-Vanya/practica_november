@@ -1,0 +1,38 @@
+{% extends 'main/base.html' %}
+{% block title %}Уведомления — Meeple{% endblock %}
+{% block content %}
+<div class="wrap">
+    <div class="page-heading">
+        <h1 class="page-title">Уведомления</h1>
+        {% if unread_notification_count %}
+            <form method="post" action="{% url 'main:notification_mark_all_read' %}">
+                {% csrf_token %}
+                <button class="btn btn-secondary" type="submit">Отметить все прочитанными</button>
+            </form>
+        {% endif %}
+    </div>
+
+    <div class="notification-list">
+        {% for notification in notifications %}
+            <article class="notification-card card{% if not notification.is_read %} is-unread{% endif %}">
+                <div class="notification-card-heading">
+                    <h2>{{ notification.title }}</h2>
+                    <time datetime="{{ notification.created_at|date:'c' }}">{{ notification.created_at|date:'d.m.Y H:i' }}</time>
+                </div>
+                <p>{{ notification.message }}</p>
+                <div class="notification-card-actions">
+                    {% if notification.order %}<a href="{% url 'main:order_detail' notification.order.pk %}">Открыть заказ {{ notification.order.number }}</a>{% endif %}
+                    {% if not notification.is_read %}
+                        <form method="post" action="{% url 'main:notification_mark_read' notification.pk %}">
+                            {% csrf_token %}
+                            <button class="text-button" type="submit">Отметить прочитанным</button>
+                        </form>
+                    {% else %}<span class="muted">Прочитано</span>{% endif %}
+                </div>
+            </article>
+        {% empty %}
+            <div class="empty-state card">Уведомлений пока нет.</div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
