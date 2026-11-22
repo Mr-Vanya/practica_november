@@ -108,6 +108,17 @@ class Cart(models.Model):
         return f"Корзина: {self.user}"
 
 
+class CartAddSubmission(models.Model):
+    token = models.UUIDField("Ключ отправки", primary_key=True, editable=False)
+    cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name="add_submissions")
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="cart_add_submissions")
+    created_at = models.DateTimeField("Создано", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "отправка добавления в корзину"
+        verbose_name_plural = "Отправки добавления в корзину"
+
+
 class CartItem(models.Model):
     cart = models.ForeignKey(
         Cart, on_delete=models.CASCADE,
@@ -173,6 +184,7 @@ class CustomerOrder(models.Model):
     ]
 
     number = models.CharField("Номер заказа", max_length=30, unique=True)
+    checkout_token = models.UUIDField("Ключ отправки формы", unique=True, null=True, blank=True, editable=False)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.PROTECT,
         related_name="orders", verbose_name="Покупатель"

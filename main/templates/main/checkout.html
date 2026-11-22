@@ -4,8 +4,9 @@
 <div class="wrap">
     <h1 class="page-title">Оформление заказа</h1>
     <div class="checkout-layout">
-        <form method="post" class="checkout-form card" autocomplete="off" data-form-type="other">
+        <form method="post" class="checkout-form card" autocomplete="off" data-form-type="other" data-single-submit>
             {% csrf_token %}
+            <input type="hidden" name="checkout_token" value="{{ checkout_token }}">
             <h2 class="card-title">Данные получателя</h2>
             <div class="form-grid">
                 <div><label class="field-label" for="contact-name">Имя и фамилия</label><input class="field" id="contact-name" name="contact_name" autocomplete="name" required></div>

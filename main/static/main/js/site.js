@@ -1,4 +1,17 @@
 document.addEventListener("DOMContentLoaded", () => {
+  document.querySelectorAll("form[data-single-submit]").forEach((form) => {
+    form.addEventListener("submit", (event) => {
+      if (form.dataset.submitting === "true") {
+        event.preventDefault();
+        return;
+      }
+      form.dataset.submitting = "true";
+      form.querySelectorAll('button[type="submit"], input[type="submit"]').forEach((button) => {
+        button.disabled = true;
+      });
+    });
+  });
+
   const returnDialog = document.querySelector("[data-return-dialog]");
   const openReturnDialog = document.querySelector("[data-open-return-dialog]");
   if (returnDialog && openReturnDialog) {

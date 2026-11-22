@@ -17,7 +17,7 @@
         {% endfor %}
         <div class="summary-row summary-total"><span>Итого</span><strong>{{ order.total }} ₽</strong></div>
         {% if order.status.name != 'Отменён' and order.status.name != 'Завершён' %}
-            <form method="post" action="{% url 'main:order_cancel' order.pk %}">
+            <form method="post" action="{% url 'main:order_cancel' order.pk %}" data-single-submit>
                 {% csrf_token %}<button class="btn btn-danger" type="submit">Отменить заказ</button>
             </form>
         {% endif %}
@@ -52,7 +52,7 @@
             {% if order.return_status == 'rejected' %}Подать заявку повторно{% else %}Оформить возврат{% endif %}
         </button>
         <dialog class="return-dialog" data-return-dialog aria-labelledby="return-dialog-title">
-            <form method="post" action="{% url 'main:order_return_request' order.pk %}" class="return-dialog-form">
+            <form method="post" action="{% url 'main:order_return_request' order.pk %}" class="return-dialog-form" data-single-submit>
                 {% csrf_token %}
                 <h2 id="return-dialog-title">Причина возврата</h2>
                 <p class="muted">Выберите игру и количество. После отправки заявки дождитесь решения менеджера.</p>

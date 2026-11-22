@@ -24,8 +24,9 @@
                 <span>{{ product.min_age }}+</span>
             </div>
             {% if user.is_authenticated %}
-                <form method="post" action="{% url 'main:cart_add' product.pk %}">
+                <form method="post" action="{% url 'main:cart_add' product.pk %}" data-single-submit>
                     {% csrf_token %}
+                    <input type="hidden" name="cart_add_token" value="{{ cart_add_token }}">
                     <input type="hidden" name="next" value="{% url 'main:product_detail' product.pk %}">
                     <button class="btn" type="submit" {% if not product.stock.quantity %}disabled{% endif %}>Добавить в корзину</button>
                 </form>

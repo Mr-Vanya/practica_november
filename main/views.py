@@ -1,6 +1,8 @@
 import csv
+import hashlib
 import io
 import json
+import logging
 import uuid
 from decimal import Decimal, InvalidOperation
 
@@ -8,9 +10,10 @@ from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.forms import UserCreationForm
+from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.db.models.deletion import ProtectedError
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import Avg, F, Q, Sum, Count, IntegerField, Value
 from django.db.models.functions import Coalesce, TruncMonth
 from django.http import HttpResponse, JsonResponse
@@ -20,9 +23,49 @@ from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 
 from .models import (
-    Cart, CartItem, Category, CustomerOrder, Manufacturer, OrderItem, OrderStatus,
+    Cart, CartAddSubmission, CartItem, Category, CustomerOrder, Manufacturer, OrderItem, OrderStatus,
     Notification, Product, Review, Stock,
 )
+
+auth_logger = logging.getLogger("main.auth")
+LOGIN_WINDOW_SECONDS = 15 * 60
+LOGIN_LOCK_SECONDS = 15 * 60
+LOGIN_PAIR_LIMIT = 5
+LOGIN_IP_LIMIT = 20
+
+
+def _login_throttle_key(scope, ip_address, username=""):
+    raw_key = f"{scope}:{ip_address}:{username}".encode("utf-8")
+    return "login-throttle:" + hashlib.sha256(raw_key).hexdigest()
+
+
+def _login_is_blocked(ip_address, username):
+    now = timezone.now().timestamp()
+    keys = (
+        _login_throttle_key("pair-lock", ip_address, username),
+        _login_throttle_key("ip-lock", ip_address),
+    )
+    return any((cache.get(key) or 0) > now for key in keys)
+
+
+def _record_failed_login(ip_address, username):
+    limits = (
+        ("pair", username, LOGIN_PAIR_LIMIT),
+        ("ip", "", LOGIN_IP_LIMIT),
+    )
+    now = timezone.now().timestamp()
+    blocked = False
+    for scope, value, limit in limits:
+        attempts_key = _login_throttle_key(f"{scope}-attempts", ip_address, value)
+        attempts = cache.get(attempts_key, 0) + 1
+        if attempts >= limit:
+            lock_key = _login_throttle_key(f"{scope}-lock", ip_address, value)
+            cache.set(lock_key, now + LOGIN_LOCK_SECONDS, timeout=LOGIN_LOCK_SECONDS)
+            cache.delete(attempts_key)
+            blocked = True
+        else:
+            cache.set(attempts_key, attempts, timeout=LOGIN_WINDOW_SECONDS)
+    return blocked
 
 
 def _create_order_notification(order, title, message):
@@ -137,7 +180,11 @@ def product_detail(request, product_id):
             messages.success(request, "Отзыв сохранён.")
         except (ValueError, TypeError): messages.error(request, "Оценка должна быть от 1 до 5.")
         return redirect("main:product_detail", product_id=product.pk)
-    return render(request, "main/product_detail.html", {"product": product, "reviews": reviews})
+    return render(request, "main/product_detail.html", {
+        "product": product,
+        "reviews": reviews,
+        "cart_add_token": uuid.uuid4(),
+    })
 
 
 def _user_cart(user):
@@ -161,9 +208,29 @@ def cart_detail(request):
 def cart_add(request, product_id):
     product = get_object_or_404(Product, pk=product_id, is_active=True)
     cart = _user_cart(request.user)
-    item, created = CartItem.objects.get_or_create(cart=cart, product=product, defaults={"quantity": 1})
-    if not created: item.quantity = F("quantity") + 1; item.save(update_fields=["quantity"])
-    messages.success(request, "Товар добавлен в корзину.")
+    try:
+        token = uuid.UUID(request.POST.get("cart_add_token", ""))
+    except (TypeError, ValueError, AttributeError):
+        messages.error(request, "Форма устарела. Откройте карточку товара и попробуйте ещё раз.")
+        return redirect("main:product_detail", product_id=product.pk)
+
+    with transaction.atomic():
+        submission, created = CartAddSubmission.objects.get_or_create(
+            token=token,
+            defaults={"cart": cart, "product": product},
+        )
+        if submission.cart_id != cart.pk or submission.product_id != product.pk:
+            messages.error(request, "Не удалось проверить отправку. Обновите карточку товара.")
+        elif not created:
+            messages.info(request, "Эта отправка уже обработана; товар не добавлен повторно.")
+        else:
+            item, item_created = CartItem.objects.get_or_create(
+                cart=cart, product=product, defaults={"quantity": 1}
+            )
+            if not item_created:
+                item.quantity = F("quantity") + 1
+                item.save(update_fields=["quantity"])
+            messages.success(request, "Товар добавлен в корзину.")
     return redirect(request.POST.get("next") or "main:cart")
 
 
@@ -203,9 +270,27 @@ def cart_update(request, item_id):
 def checkout(request):
     cart = _user_cart(request.user)
     items = list(cart.items.select_related("product").prefetch_related("product__stock"))
+    checkout_token = None
     if request.method == "POST":
+        try:
+            checkout_token = uuid.UUID(request.POST.get("checkout_token", ""))
+        except (TypeError, ValueError, AttributeError):
+            checkout_token = None
+
+        if checkout_token is None:
+            messages.error(request, "Форма устарела. Обновите страницу и попробуйте ещё раз.")
+        else:
+            existing_order = CustomerOrder.objects.filter(checkout_token=checkout_token).first()
+            if existing_order and existing_order.user_id == request.user.id:
+                return redirect("main:order_detail", order_id=existing_order.pk)
+            if existing_order:
+                checkout_token = None
+                messages.error(request, "Не удалось проверить отправку формы. Обновите страницу.")
+
         required = ["contact_name", "phone", "email", "pickup_point"]
-        if not all(request.POST.get(k, "").strip() for k in required):
+        if checkout_token is None:
+            pass
+        elif not all(request.POST.get(k, "").strip() for k in required):
             messages.error(request, "Заполните все контактные поля.")
         elif not items:
             messages.error(request, "Корзина пуста.")
@@ -222,7 +307,8 @@ def checkout(request):
                         locked.append((item, stock))
                     status, _ = OrderStatus.objects.get_or_create(name="Новый")
                     order = CustomerOrder.objects.create(
-                        number="ORD-" + uuid.uuid4().hex[:8].upper(), user=request.user, status=status, total=total,
+                        number="ORD-" + uuid.uuid4().hex[:8].upper(), checkout_token=checkout_token,
+                        user=request.user, status=status, total=total,
                         contact_name=request.POST["contact_name"].strip(), phone=request.POST["phone"].strip(),
                         email=request.POST["email"].strip(), pickup_point=request.POST["pickup_point"].strip())
                     _create_order_notification(
@@ -238,15 +324,51 @@ def checkout(request):
                 return redirect("main:order_detail", order_id=order.pk)
             except Stock.DoesNotExist: messages.error(request, "Для одного из товаров не настроен складской остаток.")
             except ValueError as exc: messages.error(request, str(exc))
+            except IntegrityError:
+                existing_order = CustomerOrder.objects.filter(checkout_token=checkout_token, user=request.user).first()
+                if existing_order:
+                    return redirect("main:order_detail", order_id=existing_order.pk)
+                messages.error(request, "Не удалось оформить заказ. Обновите страницу и попробуйте снова.")
+    if checkout_token is None:
+        checkout_token = uuid.uuid4()
     total = sum((i.product.price * i.quantity for i in items), Decimal("0.00"))
-    return render(request, "main/checkout.html", {"items": items, "total": total})
+    return render(request, "main/checkout.html", {"items": items, "total": total, "checkout_token": checkout_token})
 
 
 def login_view(request):
     if request.method == "POST":
-        user = authenticate(request, username=request.POST.get("username", ""), password=request.POST.get("password", ""))
+        username = request.POST.get("username", "")
+        username_key = " ".join(username.strip().casefold().split())[:150]
+        ip_address = request.META.get("REMOTE_ADDR", "unknown")
+
+        if _login_is_blocked(ip_address, username_key):
+            auth_logger.warning(
+                "Login blocked by throttle: username=%r ip=%s",
+                username_key,
+                ip_address,
+            )
+            messages.error(request, "Слишком много попыток входа. Попробуйте снова через 15 минут.")
+            return render(request, "main/login.html", status=429)
+
+        user = authenticate(
+            request,
+            username=username,
+            password=request.POST.get("password", ""),
+        )
         if user is not None:
+            cache.delete(_login_throttle_key("pair-attempts", ip_address, username_key))
+            cache.delete(_login_throttle_key("pair-lock", ip_address, username_key))
             login(request, user); return redirect(request.GET.get("next") or "main:home")
+        locked = _record_failed_login(ip_address, username_key)
+        auth_logger.warning(
+            "Failed login attempt: username=%r ip=%s blocked=%s",
+            username_key,
+            ip_address,
+            locked,
+        )
+        if locked:
+            messages.error(request, "Слишком много попыток входа. Попробуйте снова через 15 минут.")
+            return render(request, "main/login.html", status=429)
         messages.error(request, "Не удалось войти: проверьте логин и пароль.")
     return render(request, "main/login.html")
 
