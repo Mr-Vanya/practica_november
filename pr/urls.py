@@ -27,3 +27,5 @@ urlpatterns = [
 ]
 
 handler404 = 'main.views.page_not_found'
+handler403 = 'main.views.page_forbidden'
+handler500 = 'main.views.page_server_error'

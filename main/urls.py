@@ -30,4 +30,5 @@ urlpatterns = [
     path("manager/orders/<int:order_id>/return/", views.manager_return_decision, name="manager_return_decision"),
     path("manager/statistics/", views.manager_statistics, name="manager_statistics"),
     path("api/catalog/", views.catalog_json, name="catalog_json"),
+    path("_test-500/", views.test_500),
 ]

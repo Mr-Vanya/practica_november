@@ -5,18 +5,20 @@ import json
 import logging
 import uuid
 from decimal import Decimal, InvalidOperation
+from functools import wraps
 
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.decorators import login_required, user_passes_test
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.db.models.deletion import ProtectedError
 from django.db import IntegrityError, transaction
 from django.db.models import Avg, F, Q, Sum, Count, IntegerField, Value
 from django.db.models.functions import Coalesce, TruncMonth
+from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse, JsonResponse
+from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -26,12 +28,39 @@ from .models import (
     Cart, CartAddSubmission, CartItem, Category, CustomerOrder, Manufacturer, OrderItem, OrderStatus,
     Notification, Product, Review, Stock,
 )
+from .forms import CheckoutForm, LoginForm, RussianUserCreationForm
 
 auth_logger = logging.getLogger("main.auth")
 LOGIN_WINDOW_SECONDS = 15 * 60
 LOGIN_LOCK_SECONDS = 15 * 60
 LOGIN_PAIR_LIMIT = 5
 LOGIN_IP_LIMIT = 20
+
+
+def manager_required(user):
+    return user.is_authenticated and (
+        user.is_staff or user.groups.filter(name="Менеджер").exists()
+    )
+
+
+def customer_access_required(view_func):
+    """Show the styled 403 page instead of redirecting anonymous visitors to login."""
+    @wraps(view_func)
+    def wrapped(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            raise PermissionDenied
+        return view_func(request, *args, **kwargs)
+    return wrapped
+
+
+def manager_access_required(view_func):
+    """Hide manager-only URLs from everyone without a manager account."""
+    @wraps(view_func)
+    def wrapped(request, *args, **kwargs):
+        if not manager_required(request.user):
+            raise Http404
+        return view_func(request, *args, **kwargs)
+    return wrapped
 
 
 def _login_throttle_key(scope, ip_address, username=""):
@@ -192,7 +221,7 @@ def _user_cart(user):
     return cart
 
 
-@login_required
+@customer_access_required
 def cart_detail(request):
     cart = _user_cart(request.user)
     items = list(cart.items.select_related("product", "product__stock"))
@@ -203,7 +232,7 @@ def cart_detail(request):
     return render(request, "main/cart.html", {"cart": cart, "items": items, "total": total})
 
 
-@login_required
+@customer_access_required
 @require_POST
 def cart_add(request, product_id):
     product = get_object_or_404(Product, pk=product_id, is_active=True)
@@ -234,7 +263,7 @@ def cart_add(request, product_id):
     return redirect(request.POST.get("next") or "main:cart")
 
 
-@login_required
+@customer_access_required
 @require_POST
 def cart_update(request, item_id):
     item = get_object_or_404(CartItem, pk=item_id, cart__user=request.user)
@@ -266,10 +295,11 @@ def cart_update(request, item_id):
     return redirect("main:cart")
 
 
-@login_required
+@customer_access_required
 def checkout(request):
     cart = _user_cart(request.user)
     items = list(cart.items.select_related("product").prefetch_related("product__stock"))
+    form = CheckoutForm(request.POST if request.method == "POST" else None)
     checkout_token = None
     if request.method == "POST":
         try:
@@ -278,66 +308,66 @@ def checkout(request):
             checkout_token = None
 
         if checkout_token is None:
-            messages.error(request, "Форма устарела. Обновите страницу и попробуйте ещё раз.")
+            form.add_error(None, "Форма устарела. Обновите страницу и заполните данные ещё раз.")
         else:
             existing_order = CustomerOrder.objects.filter(checkout_token=checkout_token).first()
             if existing_order and existing_order.user_id == request.user.id:
                 return redirect("main:order_detail", order_id=existing_order.pk)
             if existing_order:
                 checkout_token = None
-                messages.error(request, "Не удалось проверить отправку формы. Обновите страницу.")
+                form.add_error(None, "Не удалось проверить отправку формы. Обновите страницу.")
 
-        required = ["contact_name", "phone", "email", "pickup_point"]
-        if checkout_token is None:
-            pass
-        elif not all(request.POST.get(k, "").strip() for k in required):
-            messages.error(request, "Заполните все контактные поля.")
-        elif not items:
-            messages.error(request, "Корзина пуста.")
-        else:
-            try:
-                with transaction.atomic():
-                    total = Decimal("0.00")
-                    locked = []
-                    for item in items:
-                        stock = Stock.objects.select_for_update().get(product=item.product)
-                        if item.quantity > stock.quantity:
-                            raise ValueError(f"Недостаточно товара «{item.product.name}»: доступно {stock.quantity}.")
-                        total += item.product.price * item.quantity
-                        locked.append((item, stock))
-                    status, _ = OrderStatus.objects.get_or_create(name="Новый")
-                    order = CustomerOrder.objects.create(
-                        number="ORD-" + uuid.uuid4().hex[:8].upper(), checkout_token=checkout_token,
-                        user=request.user, status=status, total=total,
-                        contact_name=request.POST["contact_name"].strip(), phone=request.POST["phone"].strip(),
-                        email=request.POST["email"].strip(), pickup_point=request.POST["pickup_point"].strip())
-                    _create_order_notification(
-                        order,
-                        "Заказ создан",
-                        f"Заказ {order.number} оформлен. Текущий статус: {order.status.name}.",
-                    )
-                    for item, stock in locked:
-                        OrderItem.objects.create(order=order, product=item.product, quantity=item.quantity, unit_price=item.product.price)
-                        stock.quantity -= item.quantity; stock.save(update_fields=["quantity"])
-                    cart.items.all().delete()
-                messages.success(request, f"Заказ {order.number} создан.")
-                return redirect("main:order_detail", order_id=order.pk)
-            except Stock.DoesNotExist: messages.error(request, "Для одного из товаров не настроен складской остаток.")
-            except ValueError as exc: messages.error(request, str(exc))
-            except IntegrityError:
-                existing_order = CustomerOrder.objects.filter(checkout_token=checkout_token, user=request.user).first()
-                if existing_order:
-                    return redirect("main:order_detail", order_id=existing_order.pk)
-                messages.error(request, "Не удалось оформить заказ. Обновите страницу и попробуйте снова.")
+        if checkout_token is not None and form.is_valid():
+            if not items:
+                form.add_error(None, "Корзина пуста. Добавьте товары перед оформлением заказа.")
+            else:
+                data = form.cleaned_data
+                try:
+                    with transaction.atomic():
+                        total = Decimal("0.00")
+                        locked = []
+                        for item in items:
+                            stock = Stock.objects.select_for_update().get(product=item.product)
+                            if item.quantity > stock.quantity:
+                                raise ValueError(f"Недостаточно товара «{item.product.name}»: доступно {stock.quantity}.")
+                            total += item.product.price * item.quantity
+                            locked.append((item, stock))
+                        status, _ = OrderStatus.objects.get_or_create(name="Новый")
+                        order = CustomerOrder.objects.create(
+                            number="ORD-" + uuid.uuid4().hex[:8].upper(), checkout_token=checkout_token,
+                            user=request.user, status=status, total=total,
+                            contact_name=data["contact_name"], phone=data["phone"],
+                            email=data["email"], pickup_point=data["pickup_point"])
+                        _create_order_notification(
+                            order,
+                            "Заказ создан",
+                            f"Заказ {order.number} оформлен. Текущий статус: {order.status.name}.",
+                        )
+                        for item, stock in locked:
+                            OrderItem.objects.create(order=order, product=item.product, quantity=item.quantity, unit_price=item.product.price)
+                            stock.quantity -= item.quantity; stock.save(update_fields=["quantity"])
+                        cart.items.all().delete()
+                    messages.success(request, f"Заказ {order.number} создан.")
+                    return redirect("main:order_detail", order_id=order.pk)
+                except Stock.DoesNotExist:
+                    form.add_error(None, "Не удалось проверить остаток одного из товаров. Обновите страницу и попробуйте снова.")
+                except ValueError as exc:
+                    form.add_error(None, str(exc))
+                except IntegrityError:
+                    existing_order = CustomerOrder.objects.filter(checkout_token=checkout_token, user=request.user).first()
+                    if existing_order:
+                        return redirect("main:order_detail", order_id=existing_order.pk)
+                    form.add_error(None, "Не удалось оформить заказ. Обновите страницу и попробуйте снова.")
     if checkout_token is None:
         checkout_token = uuid.uuid4()
     total = sum((i.product.price * i.quantity for i in items), Decimal("0.00"))
-    return render(request, "main/checkout.html", {"items": items, "total": total, "checkout_token": checkout_token})
+    return render(request, "main/checkout.html", {"items": items, "total": total, "checkout_token": checkout_token, "form": form})
 
 
 def login_view(request):
-    if request.method == "POST":
-        username = request.POST.get("username", "")
+    form = LoginForm(request.POST if request.method == "POST" else None)
+    if request.method == "POST" and form.is_valid():
+        username = form.cleaned_data["username"]
         username_key = " ".join(username.strip().casefold().split())[:150]
         ip_address = request.META.get("REMOTE_ADDR", "unknown")
 
@@ -347,13 +377,13 @@ def login_view(request):
                 username_key,
                 ip_address,
             )
-            messages.error(request, "Слишком много попыток входа. Попробуйте снова через 15 минут.")
-            return render(request, "main/login.html", status=429)
+            form.add_error(None, "Слишком много попыток входа. Попробуйте снова через 15 минут.")
+            return render(request, "main/login.html", {"form": form}, status=429)
 
         user = authenticate(
             request,
             username=username,
-            password=request.POST.get("password", ""),
+            password=form.cleaned_data["password"],
         )
         if user is not None:
             cache.delete(_login_throttle_key("pair-attempts", ip_address, username_key))
@@ -367,14 +397,14 @@ def login_view(request):
             locked,
         )
         if locked:
-            messages.error(request, "Слишком много попыток входа. Попробуйте снова через 15 минут.")
-            return render(request, "main/login.html", status=429)
-        messages.error(request, "Не удалось войти: проверьте логин и пароль.")
-    return render(request, "main/login.html")
+            form.add_error(None, "Слишком много попыток входа. Попробуйте снова через 15 минут.")
+            return render(request, "main/login.html", {"form": form}, status=429)
+        form.add_error(None, "Не удалось войти. Проверьте имя пользователя и пароль.")
+    return render(request, "main/login.html", {"form": form})
 
 
 def register_view(request):
-    form = UserCreationForm(request.POST or None)
+    form = RussianUserCreationForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         user = form.save(); login(request, user); return redirect("main:home")
     return render(request, "main/register.html", {"form": form})
@@ -384,25 +414,33 @@ def page_not_found(request, exception):
     return render(request, "main/404.html", status=404)
 
 
+def page_forbidden(request, exception):
+    return render(request, "main/403.html", status=403)
+
+
+def page_server_error(request):
+    return render(request, "main/500.html", status=500)
+
+
 @login_required
 def logout_view(request):
     if request.method == "POST": logout(request)
     return redirect("main:home")
 
 
-@login_required
+@customer_access_required
 def order_list(request):
     orders = CustomerOrder.objects.filter(user=request.user).select_related("status")
     return render(request, "main/orders.html", {"orders": orders})
 
 
-@login_required
+@customer_access_required
 def order_detail(request, order_id):
     order = get_object_or_404(CustomerOrder.objects.select_related("status").prefetch_related("items__product"), pk=order_id, user=request.user)
     return render(request, "main/order_detail.html", {"order": order})
 
 
-@login_required
+@customer_access_required
 def order_export_csv(request, order_id):
     order_query = CustomerOrder.objects.select_related("status", "user").prefetch_related("items__product")
     if request.user.is_staff or request.user.groups.filter(name="Менеджер").exists():
@@ -440,7 +478,7 @@ def order_export_csv(request, order_id):
     return response
 
 
-@login_required
+@customer_access_required
 @require_POST
 def order_cancel(request, order_id):
     with transaction.atomic():
@@ -457,7 +495,7 @@ def order_cancel(request, order_id):
     return redirect("main:order_detail", order_id=order_id)
 
 
-@login_required
+@customer_access_required
 @require_POST
 def order_return_request(request, order_id):
     reason = request.POST.get("reason", "").strip()
@@ -517,10 +555,7 @@ def rules_help_page(request):
     return render(request, "main/rules_help.html")
 
 
-def manager_required(user): return user.is_authenticated and (user.is_staff or user.groups.filter(name="Менеджер").exists())
-
-
-@user_passes_test(manager_required)
+@manager_access_required
 def manager_products(request):
     if request.method == "POST":
         product = get_object_or_404(Product, pk=request.POST.get("product_id"))
@@ -550,7 +585,7 @@ def manager_products(request):
     return render(request, "main/manager_products.html", {"products": products})
 
 
-@user_passes_test(manager_required)
+@manager_access_required
 def manager_product_create(request):
     from .forms import ProductForm
     form = ProductForm(request.POST or None, request.FILES or None)
@@ -559,7 +594,7 @@ def manager_product_create(request):
     return render(request, "main/manager_product_form.html", {"form": form})
 
 
-@user_passes_test(manager_required)
+@manager_access_required
 def manager_product_edit(request, product_id):
     from .forms import ProductForm
     product = get_object_or_404(Product, pk=product_id)
@@ -571,7 +606,7 @@ def manager_product_edit(request, product_id):
     return render(request, "main/manager_product_form.html", {"form": form, "product": product, "is_edit": True})
 
 
-@user_passes_test(manager_required)
+@manager_access_required
 def manager_orders(request):
     statuses = ["Новый", "Подтверждён", "Собран", "Подготовлен к выдаче", "Завершён", "Отменён"]
     if request.method == "POST":
@@ -602,7 +637,7 @@ def manager_orders(request):
     })
 
 
-@user_passes_test(manager_required)
+@manager_access_required
 @require_POST
 def manager_return_decision(request, order_id):
     decision = request.POST.get("decision")
@@ -630,13 +665,13 @@ def manager_return_decision(request, order_id):
     return redirect("main:manager_orders")
 
 
-@login_required
+@customer_access_required
 def notification_list(request):
     notifications = Notification.objects.filter(user=request.user).select_related("order")
     return render(request, "main/notifications.html", {"notifications": notifications})
 
 
-@login_required
+@customer_access_required
 @require_POST
 def notification_mark_read(request, notification_id):
     notification = get_object_or_404(Notification, pk=notification_id, user=request.user)
@@ -647,14 +682,14 @@ def notification_mark_read(request, notification_id):
     return redirect("main:notifications")
 
 
-@login_required
+@customer_access_required
 @require_POST
 def notification_mark_all_read(request):
     Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
     return redirect("main:notifications")
 
 
-@user_passes_test(manager_required)
+@manager_access_required
 def manager_statistics(request):
     orders = CustomerOrder.objects.exclude(status__name="Отменён")
     revenue = orders.aggregate(value=Sum("total"))["value"] or Decimal("0.00")
@@ -834,3 +869,6 @@ def catalog_json(request):
         "has_previous": page.has_previous(),
         "has_next": page.has_next(),
     })
+
+def test_500(request):
+    raise Exception("Проверка страницы 500")

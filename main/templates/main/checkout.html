@@ -8,11 +8,12 @@
             {% csrf_token %}
             <input type="hidden" name="checkout_token" value="{{ checkout_token }}">
             <h2 class="card-title">Данные получателя</h2>
+            {{ form.non_field_errors }}
             <div class="form-grid">
-                <div><label class="field-label" for="contact-name">Имя и фамилия</label><input class="field" id="contact-name" name="contact_name" autocomplete="name" required></div>
-                <div><label class="field-label" for="phone">Телефон</label><input class="field" id="phone" name="phone" type="tel" autocomplete="tel" required></div>
-                <div><label class="field-label" for="email">Электронная почта</label><input class="field" id="email" name="email" type="email" autocomplete="email" required></div>
-                <div><label class="field-label" for="pickup-point">Пункт выдачи</label><input class="field" id="pickup-point" name="pickup_point" autocomplete="off" required></div>
+                <div><label class="field-label" for="{{ form.contact_name.id_for_label }}">{{ form.contact_name.label }}</label>{{ form.contact_name }}{{ form.contact_name.errors }}<small class="field-help">{{ form.contact_name.help_text }}</small></div>
+                <div><label class="field-label" for="{{ form.phone.id_for_label }}">{{ form.phone.label }}</label>{{ form.phone }}{{ form.phone.errors }}<small class="field-help">{{ form.phone.help_text }}</small></div>
+                <div><label class="field-label" for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>{{ form.email }}{{ form.email.errors }}<small class="field-help">{{ form.email.help_text }}</small></div>
+                <div><label class="field-label" for="{{ form.pickup_point.id_for_label }}">{{ form.pickup_point.label }}</label>{{ form.pickup_point }}{{ form.pickup_point.errors }}<small class="field-help">{{ form.pickup_point.help_text }}</small></div>
             </div>
             <button class="btn" type="submit">Подтвердить учебный заказ</button>
         </form>

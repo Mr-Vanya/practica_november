@@ -14,51 +14,51 @@
             <tbody>
                 <tr>
                     <th scope="row"><label for="{{ form.category.id_for_label }}">Категория</label></th>
-                    <td>{{ form.category }}{{ form.category.errors }}</td>
+                    <td>{{ form.category }}{{ form.category.errors }}{% if form.category.help_text %}<small class="field-help">{{ form.category.help_text }}</small>{% endif %}</td>
                 </tr>
                 <tr>
                     <th scope="row"><label for="{{ form.manufacturer.id_for_label }}">Производитель</label></th>
-                    <td>{{ form.manufacturer }}{{ form.manufacturer.errors }}</td>
+                    <td>{{ form.manufacturer }}{{ form.manufacturer.errors }}{% if form.manufacturer.help_text %}<small class="field-help">{{ form.manufacturer.help_text }}</small>{% endif %}</td>
                 </tr>
                 <tr>
                     <th scope="row"><label for="{{ form.name.id_for_label }}">Название</label></th>
-                    <td>{{ form.name }}{{ form.name.errors }}</td>
+                    <td>{{ form.name }}{{ form.name.errors }}{% if form.name.help_text %}<small class="field-help">{{ form.name.help_text }}</small>{% endif %}</td>
                 </tr>
                 <tr>
                     <th scope="row"><label for="{{ form.sku.id_for_label }}">Артикул</label></th>
-                    <td>{{ form.sku }}{{ form.sku.errors }}</td>
+                    <td>{{ form.sku }}{{ form.sku.errors }}{% if form.sku.help_text %}<small class="field-help">{{ form.sku.help_text }}</small>{% endif %}</td>
                 </tr>
                 <tr>
                     <th scope="row"><label for="{{ form.description.id_for_label }}">Описание</label></th>
-                    <td>{{ form.description }}{{ form.description.errors }}</td>
+                    <td>{{ form.description }}{{ form.description.errors }}{% if form.description.help_text %}<small class="field-help">{{ form.description.help_text }}</small>{% endif %}</td>
                 </tr>
                 <tr>
                     <th scope="row"><label for="{{ form.price.id_for_label }}">Цена</label></th>
-                    <td>{{ form.price }} ₽{{ form.price.errors }}</td>
+                    <td>{{ form.price }} ₽{{ form.price.errors }}{% if form.price.help_text %}<small class="field-help">{{ form.price.help_text }}</small>{% endif %}</td>
                 </tr>
                 <tr>
                     <th scope="row"><label for="{{ form.min_age.id_for_label }}">Возраст от</label></th>
-                    <td>{{ form.min_age }} лет{{ form.min_age.errors }}</td>
+                    <td>{{ form.min_age }} лет{{ form.min_age.errors }}{% if form.min_age.help_text %}<small class="field-help">{{ form.min_age.help_text }}</small>{% endif %}</td>
                 </tr>
                 <tr>
                     <th scope="row"><label for="{{ form.min_players.id_for_label }}">Игроков от</label></th>
-                    <td>{{ form.min_players }}{{ form.min_players.errors }}</td>
+                    <td>{{ form.min_players }}{{ form.min_players.errors }}{% if form.min_players.help_text %}<small class="field-help">{{ form.min_players.help_text }}</small>{% endif %}</td>
                 </tr>
                 <tr>
                     <th scope="row"><label for="{{ form.max_players.id_for_label }}">Игроков до</label></th>
-                    <td>{{ form.max_players }}{{ form.max_players.errors }}</td>
+                    <td>{{ form.max_players }}{{ form.max_players.errors }}{% if form.max_players.help_text %}<small class="field-help">{{ form.max_players.help_text }}</small>{% endif %}</td>
                 </tr>
                 <tr>
                     <th scope="row"><label for="{{ form.duration_min.id_for_label }}">Длительность, минут</label></th>
-                    <td>{{ form.duration_min }}{{ form.duration_min.errors }}</td>
+                    <td>{{ form.duration_min }}{{ form.duration_min.errors }}{% if form.duration_min.help_text %}<small class="field-help">{{ form.duration_min.help_text }}</small>{% endif %}</td>
                 </tr>
                 <tr>
                     <th scope="row"><label for="{{ form.language.id_for_label }}">Язык</label></th>
-                    <td>{{ form.language }}{{ form.language.errors }}</td>
+                    <td>{{ form.language }}{{ form.language.errors }}{% if form.language.help_text %}<small class="field-help">{{ form.language.help_text }}</small>{% endif %}</td>
                 </tr>
                 <tr>
                     <th scope="row"><label for="{{ form.image.id_for_label }}">Изображение</label></th>
-                    <td>{{ form.image }}{{ form.image.errors }}</td>
+                    <td>{{ form.image }}{{ form.image.errors }}{% if form.image.help_text %}<small class="field-help">{{ form.image.help_text }}</small>{% endif %}</td>
                 </tr>
                 <tr>
                     <th scope="row"><label for="{{ form.is_active.id_for_label }}">Показывать в каталоге</label></th>

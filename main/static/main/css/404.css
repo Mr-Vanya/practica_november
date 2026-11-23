@@ -67,3 +67,6 @@ p { margin: 0 auto 26px; color: var(--muted); }
 }
 .home-link:hover { background: #5548c1; transform: translateY(-1px); }
 .home-link:focus-visible { outline: 3px solid #b9b1fa; outline-offset: 3px; }
+.error-secondary-link { display: block; width: fit-content; margin: 16px auto 0; color: var(--primary); font-weight: 700; text-decoration: none; }
+.error-secondary-link:hover { text-decoration: underline; }
+.error-secondary-link:focus-visible { outline: 3px solid #b9b1fa; outline-offset: 3px; }

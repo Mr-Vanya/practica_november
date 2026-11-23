@@ -1,0 +1,18 @@
+{% extends "main/base.html" %}
+{% load static %}
+{% block title %}500 — ошибка сервера{% endblock %}
+{% block extra_css %}{% static 'main/css/404.css' %}?v=20261123{% endblock %}
+{% block content %}
+<div class="teto">
+    <main class="error-card">
+        <a class="brand" href="{% url 'main:home' %}" aria-label="Meeple — на главную">
+            <span class="brand-mark">●</span> meeple
+        </a>
+        <p class="error-code" aria-label="Ошибка 500">500</p>
+        <h1>Что-то пошло не так</h1>
+        <p>На сервере произошла ошибка. Попробуйте обновить страницу чуть позже или вернитесь в каталог.</p>
+        <a class="home-link" href="{% url 'main:home' %}">На главную</a>
+        <a class="error-secondary-link" href="{% url 'main:catalog' %}">Перейти в каталог</a>
+    </main>
+</div>
+{% endblock %}

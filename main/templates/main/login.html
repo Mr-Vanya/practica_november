@@ -6,10 +6,15 @@
         <h1 class="page-title">Войти</h1>
         <form method="post" class="stacked-form">
             {% csrf_token %}
-            <label class="field-label" for="username">Имя пользователя</label>
-            <input class="field" id="username" name="username" autocomplete="username" required>
-            <label class="field-label" for="password">Пароль</label>
-            <input class="field" id="password" type="password" name="password" autocomplete="current-password" required>
+            {{ form.non_field_errors }}
+            <label class="field-label" for="{{ form.username.id_for_label }}">{{ form.username.label }}</label>
+            {{ form.username }}
+            {{ form.username.errors }}
+            {% if form.username.help_text %}<small class="field-help">{{ form.username.help_text }}</small>{% endif %}
+            <label class="field-label" for="{{ form.password.id_for_label }}">{{ form.password.label }}</label>
+            {{ form.password }}
+            {{ form.password.errors }}
+            {% if form.password.help_text %}<small class="field-help">{{ form.password.help_text }}</small>{% endif %}
             <button class="btn" type="submit">Войти</button>
         </form>
         <p>Нет аккаунта? <a href="{% url 'main:register' %}">Зарегистрироваться</a></p>

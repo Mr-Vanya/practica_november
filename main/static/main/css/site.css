@@ -357,6 +357,8 @@ button {
 .product-form-table th { width: 220px; color: var(--color-text); font-size: 13px; }
 .product-form-table td input:not([type="checkbox"]), .product-form-table td select, .product-form-table td textarea { width: 100%; }
 .product-form-table .errorlist { margin: 6px 0 0; color: #be503d; }
+.errorlist { margin: 5px 0 0; padding-left: 18px; color: #be503d; font-size: 13px; line-height: 1.45; }
+.field-help { display: block; margin-top: 5px; color: var(--color-muted); font-size: 12px; line-height: 1.45; }
 
 .field:focus,
 .stacked-form input:focus,
